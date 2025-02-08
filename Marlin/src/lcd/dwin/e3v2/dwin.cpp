@@ -10246,27 +10246,40 @@ void DWIN_SetPrintingDetails(const char *eta, const char *progress, const char *
     updateOctoData = true;
 }
 
-//update LCD Values
-void DWIN_OctoUpdate()
-{
-  // Verify if we must update the screen
-  if (updateOctoData)
-  {
-    // Update ETA in the LCD
-    octoUpdateScroll();
-    DWIN_Draw_Rectangle(1, All_Black, 120, 144, 230, 156);
-    DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 144, F(Octo_ETA_Global));
+void DWIN_OctoUpdate() {
+  if (updateOctoData) {
+    //We use a static variable to keep the "step" account.
+    static uint8_t updateStep = 0;
+    
+    switch (updateStep) {
+      case 0:
+        //Step 0: Update the scroll & Layer
+        octoUpdateScroll();
+        DWIN_Draw_Rectangle(1, All_Black, 80, 165, 144, 177);
+        DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 80, 165, F(Octo_CL_Global));
+        break;
 
-    // Actualizar Progreso en el LCD
-    Draw_Print_ProgressBarOcto(atoi(Octo_Progress_Global));
+      case 1:
+        //Step 1: Update ETA in the LCD
+        DWIN_Draw_Rectangle(1, All_Black, 120, 144, 230, 156);
+        DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 144, F(Octo_ETA_Global));
+        break;
 
-    // Update current layer in the LCD
-    DWIN_Draw_Rectangle(1, All_Black, 80, 165, 144, 177);
-    DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 80, 165, F(Octo_CL_Global));
+      case 2:{
+        //Step 2: Update the progress in the LCD
+        uint8_t lp = atoi(Octo_Progress_Global);
+        Draw_Print_ProgressBarOcto(lp);
+        break;
+      }
+
+      
+    }
+    
+    //Increase the counter and restart it upon reaching 4 (0 to 3)
+    updateStep = (updateStep + 1) % 3;
   }
 
   updateOctoData = false;
-
 }
 
 
@@ -10284,7 +10297,7 @@ void DWIN_OctoJobFinish()
   HMI_flag.Refresh_bottom_flag = true;
   char show_layers[51] = {0};
   clearOctoScrollVars();
-  snprintf(show_layers, sizeof(show_layers), "%s / %s", vvcurr_layer, vvtotal_layer);
+  snprintf(show_layers, sizeof(show_layers), "%s / %s", vvtotal_layer, vvtotal_layer);
   Clear_Title_Bar();
   Clear_Main_Window();
   DC_Show_defaut_imageOcto(); // For the moment show default preview

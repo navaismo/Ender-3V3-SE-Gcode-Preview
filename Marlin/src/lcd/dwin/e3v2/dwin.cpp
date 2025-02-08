@@ -246,7 +246,11 @@ char vvtotal_layer[50];
 char vvcurr_layer[50];
 char vvthumb[50];
 char vvprogress[30];
-bool updateOctoData = true;
+bool updateOctoData = false;
+char Octo_ETA_Global[20];
+char Octo_Progress_Global[20];
+char Octo_CL_Global[20];
+  
 #endif
 #endif
 
@@ -2822,9 +2826,9 @@ void Draw_Print_ProgressBarOcto(int progress)
 // DWIN_ICON_Not_Filter_Show(ICON, ICON_Bar, 15, 98);
 // DWIN_Draw_Rectangle(1, BarFill_Color, 16 + _card_percent *240 /100, 98, 256, 110); //rock_20210917
 #if ENABLED(DWIN_CREALITY_480_LCD)
-  DWIN_ICON_Not_Filter_Show(Background_ICON, Background_min + _card_percent, 15, 98);
+  DWIN_ICON_Not_Filter_Show(Background_ICON, Background_min + progress, 15, 98);
 
-  DWIN_Draw_IntValue(true, true, 0, font8x16, Percent_Color, Color_Bg_Black, 3, 109, 133, _card_percent);
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Percent_Color, Color_Bg_Black, 3, 109, 133, progress);
   DWIN_Draw_String(false, false, font8x16, Percent_Color, Color_Bg_Black, 133 + 15, 133 - 3, F("%")); // Rock 20220728
 #elif ENABLED(DWIN_CREALITY_320_LCD)
   DWIN_ICON_Not_Filter_Show(Background_ICON, BG_PRINTING_CIRCLE_MIN + progress, 125, 27);
@@ -3105,6 +3109,7 @@ void Goto_PrintProcess()
 
 void Goto_MainMenu()
 {
+  updateOctoData = false;
   checkkey = MainMenu;
   Clear_Main_Window();
   HMI_flag.Refresh_bottom_flag = true; // Flag does not refresh bottom parameters
@@ -5642,6 +5647,7 @@ void HMI_PauseOrStop()
   {
     if (select_print.now == 1)
     { // pause window
+      updateOctoData = false;
       if (HMI_flag.select_flag)
       {
         HMI_flag.pause_action = true;
@@ -5662,6 +5668,7 @@ void HMI_PauseOrStop()
     }
     else if (select_print.now == 2)
     { // stop window
+      updateOctoData = false;
       if (HMI_flag.select_flag)
       {
         if (HMI_flag.home_flag)
@@ -8062,7 +8069,7 @@ void HMI_O9000()
         // RUN_AND_WAIT_GCODE_CMD("M24", true);
         // queue.enqueue_now_P(PSTR("M24"));
         // gcode.process_subcommands_now_P(PSTR("M24"));
-        updateOctoData = true;
+        updateOctoData = false;
         DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
       }
       else
@@ -8869,10 +8876,17 @@ void EachMomentUpdate()
   static millis_t next_var_update_ms = 0, next_rts_update_ms = 0, next_heat_flash_ms = 0, next_heat_bed_flash_ms = 0, next_high_ms = 0, next_move_file_name_ms = 0;
   const millis_t ms = millis();
   char *fileName = TERN(POWER_LOSS_RECOVERY, recovery.info.sd_filename, "");
+
   PrintFile_InfoTypeDef fileInfo = {0};
   if (ELAPSED(ms, next_var_update_ms))
   {
     next_var_update_ms = ms + DWIN_VAR_UPDATE_INTERVAL;
+
+    if(serial_connection_active){
+      DWIN_OctoUpdate();
+    }
+
+
     if (!HMI_flag.Refresh_bottom_flag)
     {
       update_middle_variable();
@@ -10149,6 +10163,7 @@ void HMI_Auto_Bed_PID(void)
 // Function to send string to LCD
 void DWIN_Show_M117(char *str)
 {
+  updateOctoData = false;
   clearOctoScrollVars(); // If the OctoPrint-E3v3seprintjobdetails plugin is enable we will receive a cancel M117 so clear vars, if not is safe to clear since no job will be render
   checkkey = M117Info; // Implement Human Interface Control for M117
   Clear_Main_Window();
@@ -10164,14 +10179,14 @@ void DWIN_Show_M117(char *str)
 // Function to render the print job details from Octoprint in the LCD.
 void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char *total_layer, char *curr_layer, char *thumbnail, char *progress)
 {
-  updateOctoData = true;
+  //updateOctoData = false;
   // verify that none is null or emtpy before printing the values
   const char *vfilename = filename && filename[0] != '\0' ? filename : "Default Dummy FileName";
   const char *vprint_time = print_time && print_time[0] != '\0' ? print_time : "00:00:00";
   const char *vptime_left = ptime_left && ptime_left[0] != '\0' ? ptime_left : "00:00:00";
   const char *vtotal_layer = total_layer && total_layer[0] != '\0' ? total_layer : "0";
   const char *vcurr_layer = curr_layer && curr_layer[0] != '\0' ? curr_layer : "      0";
-  ; // first render layer is always 0 from there we update values(spaces are needed to correct format and clear values)
+  // first render layer is always 0 from there we update values(spaces are needed to correct format and clear values)
   const char *vthumb = "";
   const char *vprogress = progress && progress[0] != '\0' ? progress : "0";
 
@@ -10191,7 +10206,6 @@ void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char 
   Draw_Mid_Status_Area(true);
   HMI_flag.Refresh_bottom_flag = false;
 
-  // Todo Scroll filename if bigger than 25
   Draw_OctoTitle(vfilename); // FileName as Title
   if (vthumb == NULL || vthumb[0] == '\0')
     DC_Show_defaut_imageOcto(); // For the moment show default preview
@@ -10223,42 +10237,38 @@ void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char 
   ICON_Stop();
 }
 
-// Function to update progress from octoprint in LCD
-void DWIN_OctoUpdate_Progress(const char *progress)
-{
-  const char *uPgr = progress && progress[0] != '\0' ? progress : "0"; // ensure non empty string
-  strncpy(vvprogress, uPgr, sizeof(vvprogress) - 1);
-  if (updateOctoData)
-  {
-    Draw_Print_ProgressBarOcto(atoi(uPgr));
-  }
+// Function to set the printing variables
+void DWIN_SetPrintingDetails(const char *eta, const char *progress, const char *current_layer) {
+    if (eta) strncpy(Octo_ETA_Global, eta, sizeof(Octo_ETA_Global) - 1);
+    if (progress) strncpy(Octo_Progress_Global, progress, sizeof(Octo_Progress_Global) - 1);
+    if (current_layer) strncpy(Octo_CL_Global, current_layer, sizeof(Octo_CL_Global) - 1);
+
+    updateOctoData = true;
 }
 
-// Function to update Layer from octoprint in LCD
-void DWIN_OctoUpdate_CLayer(const char *layer)
+//update LCD Values
+void DWIN_OctoUpdate()
 {
-  const char *uVal = layer && layer[0] != '\0' ? layer : "---";
-  strncpy(vvcurr_layer, uVal, sizeof(vvcurr_layer) - 1); // ensure non empty string
-
+  // Verify if we must update the screen
   if (updateOctoData)
   {
-    DWIN_Draw_Rectangle(1, All_Black, 80, 165, 144, 177);                                                            // Clear previous Value
-    DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 80, 165, F(uVal)); // Update Current layer with new value, trying to keep simetry
+    // Update ETA in the LCD
+    octoUpdateScroll();
+    DWIN_Draw_Rectangle(1, All_Black, 120, 144, 230, 156);
+    DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 144, F(Octo_ETA_Global));
+
+    // Actualizar Progreso en el LCD
+    Draw_Print_ProgressBarOcto(atoi(Octo_Progress_Global));
+
+    // Update current layer in the LCD
+    DWIN_Draw_Rectangle(1, All_Black, 80, 165, 144, 177);
+    DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 80, 165, F(Octo_CL_Global));
   }
+
+  updateOctoData = false;
+
 }
 
-// Function to update ETA from octoprint in LCD
-void DWIN_OctoUpdate_ETA(const char *time)
-{
-  octoUpdateScroll();
-  const char *uTime = time && time[0] != '\0' ? time : "00 : 00 : 00";
-  strncpy(vvptime_left, uTime, sizeof(vvptime_left) - 1); // ensure non empty string
-  if (updateOctoData)
-  {
-    DWIN_Draw_Rectangle(1, All_Black, 120, 144, 230, 156);                                     // Clear previous Value
-    DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 144, F(uTime)); // Update Current layer with new value, trying to keep simetry
-  }
-}
 
 void clearOctoScrollVars(){
   shift_name[0] = '\0';       // clear scrolling variables
@@ -10269,7 +10279,7 @@ void clearOctoScrollVars(){
 // finishc job, clear controls and allow go back main window
 void DWIN_OctoJobFinish()
 {
-  updateOctoData=true;
+  updateOctoData = false;
   checkkey = OctoFinish;
   HMI_flag.Refresh_bottom_flag = true;
   char show_layers[51] = {0};
@@ -10282,9 +10292,14 @@ void DWIN_OctoJobFinish()
   DWIN_Draw_String(false, false, font6x12, Color_Yellow, Color_Bg_Black, 12, 145, F("Print Time:")); // Label Print Time
   DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 136, 145, F(vvprint_time));   // value Print Time
   DWIN_Draw_String(false, false, font6x12, Color_Yellow, Color_Bg_Black, 12, 165, F("Elapsed Time:"));  // Label Time Left
-  DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 138, 165, F(vvptime_left));   // value Time Left
+  DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 138, 165, F(Octo_ETA_Global));   // value Time Left
   DWIN_Draw_String(false, false, font6x12, Color_Yellow, Color_Bg_Black, 12, 186, F("Layer:"));      // Label Print Time
   DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 80, 186, F(show_layers));    // Label Print Time
+
+  //Clear Variables of the print job
+  Octo_ETA_Global[0] = '\0';
+  Octo_Progress_Global[0] = '\0';
+  Octo_CL_Global[0] = '\0';
 
   // show print done confirm
   if (HMI_flag.language < Language_Max) // Rock 20211120

@@ -97,27 +97,6 @@ void GcodeSuite::O9000()
       strncpy(progress, getParsedValue(my_string), sizeof(progress) - 1);
       //SERIAL_ECHOLNPAIR("Parameter 6 progress set: ", progress);
     }
-    else if (strstr(my_string, "UPP|") != NULL)
-    {
-      // Update Progress
-      const char *val = getParsedValue(my_string);
-      //SERIAL_ECHOLNPAIR("Updating Progress to: ", val);
-      TERN_(DWIN_CREALITY_LCD, DWIN_OctoUpdate_Progress(val));
-    }
-    else if (strstr(my_string, "UCL|") != NULL)
-    {
-      // Update Current Layer
-      const char *val = getParsedValue(my_string);
-      //SERIAL_ECHOLNPAIR("Updating Curr_Layer to: ", val);
-      TERN_(DWIN_CREALITY_LCD, DWIN_OctoUpdate_CLayer(val));
-    }
-    else if (strstr(my_string, "UET|") != NULL)
-    {
-      // Update Print Time Left
-      const char *val = getParsedValue(my_string);
-      //SERIAL_ECHOLNPAIR("Updating Curr_Layer to: ", val);
-      TERN_(DWIN_CREALITY_LCD, DWIN_OctoUpdate_ETA(val));
-    }
     else if (strstr(my_string, "PF|") != NULL)
     {
       // Print Finished

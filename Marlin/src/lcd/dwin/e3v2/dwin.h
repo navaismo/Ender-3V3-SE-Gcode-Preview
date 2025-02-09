@@ -854,12 +854,8 @@ inline void DWIN_StartHoming() { HMI_flag.home_flag = true; }
 void DWIN_Show_M117(char* str);
 // Octoprint Print status
 void DWIN_OctoPrintJob(char* filename, char* print_time, char* ptime_left, char* total_layer, char* curr_layer, char* thumbnail, char *progress);
-// Function to update progress from octoprint in LCD
-void DWIN_OctoUpdate_Progress(const char *progress);
-// Function to update progress from octoprint in LCD
-void DWIN_OctoUpdate_CLayer(const char *layer);
-// Function to update progress from octoprint in LCD
-void DWIN_OctoUpdate_ETA(const char *time);
+// Octoprint Update status
+void DWIN_OctoUpdate();
 // Function to show Gcode Preview
 void DWIN_OctoShowGCodeImage();
 // Fucntion to finish job
@@ -869,6 +865,8 @@ void Draw_OctoTitle(const char *const title);
 void octo_make_name_without_ext(char *dst, char *src, size_t maxlen);
 void octoUpdateScroll();
 void clearOctoScrollVars();
+// Set Values for updates
+void DWIN_SetPrintingDetails(const char *eta, const char *progress, const char *current_layer);
 
 
 void DWIN_CompletedHoming();

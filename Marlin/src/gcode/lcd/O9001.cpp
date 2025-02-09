@@ -44,7 +44,7 @@ void GcodeSuite::O9001()
             token = strtok(NULL, "|"); // Read next value
         }
 
-        // Guardar los valores en variables globales
+        // Save values ​​in global variables
         if (eta_str[0] != '\0' && progress_str[0] != '\0' && current_layer_str[0] != '\0')
             DWIN_SetPrintingDetails(eta_str, progress_str, current_layer_str);
     }

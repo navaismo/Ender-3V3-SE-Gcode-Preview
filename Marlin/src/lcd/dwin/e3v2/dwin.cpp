@@ -10253,16 +10253,15 @@ void DWIN_OctoUpdate() {
     
     switch (updateStep) {
       case 0:
-        //Step 0: Update the scroll & Layer
+        //Step 0: Update the scroll
         octoUpdateScroll();
-        DWIN_Draw_Rectangle(1, All_Black, 80, 165, 144, 177);
-        DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 80, 165, F(Octo_CL_Global));
+        
         break;
 
       case 1:
-        //Step 1: Update ETA in the LCD
-        DWIN_Draw_Rectangle(1, All_Black, 120, 144, 230, 156);
-        DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 144, F(Octo_ETA_Global));
+        //Step 1: Update Layer in the LCD
+        DWIN_Draw_Rectangle(1, All_Black, 80, 165, 144, 177);
+        DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 80, 165, F(Octo_CL_Global));
         break;
 
       case 2:{
@@ -10272,11 +10271,16 @@ void DWIN_OctoUpdate() {
         break;
       }
 
-      
+      case 3:  
+        //Step 2: Update ETA in the LCD
+        DWIN_Draw_Rectangle(1, All_Black, 120, 144, 230, 156);
+        DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 144, F(Octo_ETA_Global));
+        break;
+
     }
     
     //Increase the counter and restart it upon reaching 4 (0 to 3)
-    updateStep = (updateStep + 1) % 3;
+    updateStep = (updateStep + 1) % 4;
   }
 
   updateOctoData = false;

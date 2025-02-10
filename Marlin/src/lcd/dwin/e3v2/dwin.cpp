@@ -10381,6 +10381,35 @@ void DWIN_OctoJobFinish()
   }
 }
 
+void DWIN_RenderImageMap(){
+  uint16_t x_start = 2; 
+  uint16_t y_start = 25;
+
+  updateOctoData = false;
+  checkkey = OctoFinish;
+  HMI_flag.Refresh_bottom_flag = true;
+  Clear_Title_Bar();
+  Clear_Main_Window();
+
+   // show print done confirm
+   if (HMI_flag.language < Language_Max) // Rock 20211120
+   {
+     DWIN_ICON_Show(HMI_flag.language, LANGUAGE_LEVEL_FINISH, TITLE_X, TITLE_Y);
+     DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, OK_BUTTON_X, 225);
+   }
+
+  for (uint16_t y = 0; y < IMAGE_HEIGHT; y++) {
+    for (uint16_t x = 0; x < IMAGE_WIDTH; x++) {
+        uint16_t color = ImageMap[y * IMAGE_WIDTH + x];
+        DWIN_Draw_Rectangle(1, color, x_start + x, y_start + y, x_start + x, y_start + y);
+    }
+  }
+
+
+
+}
+
+
 void DWIN_OctoShowGCodeImage()
 {
   checkkey = M117Info; // Implement Human Interface Control for M117

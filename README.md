@@ -16,7 +16,7 @@
 >  - [x] Added the detailed page and controls of a Print Job Coming from Octoprint to be shown in the LCD.
 >  - [x] Added custom comand O9000 to receive the data to render in the Print Job Page from Octo print.
 >  - [x] Increased Buffers for the Serial Communication.
->  - [x] Increased the BaudRate from 115200 to 128000. 
+>  - [x] Increased the BaudRate from 115200 to 128000 & 150000. 
 >  - [x] Added a new Item to the TUNE Menu to control the Extrusion/Flow Rate from 0 to 200%.
 >  - [x] Added @eduard-sukharev Adaptative Mesh for the Bed Level Grid.
 >  - [x] Added @eduard-sukharev Input Shaping LCD Menu.
@@ -79,7 +79,7 @@
 > 3. Plug the SD Card in your printer and turn it on
 > 4. Wait for the update to finish - it needs ~10 seconds.
 > 5. Run a new Autolevel.
-> 6. In Octoprint enable the 128000 baud rate.
+> 6. In Octoprint enable the 128000 & 150000 baud rates depending which version you want to use. 
 
 
 

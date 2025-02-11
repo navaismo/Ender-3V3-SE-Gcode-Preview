@@ -3378,6 +3378,7 @@ void HMI_Zoffset()
 
 void HMI_O9000Zoffset()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3495,6 +3496,7 @@ void HMI_ETemp()
 
 void HMI_O9000ETemp()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3565,6 +3567,7 @@ void HMI_O9000ETemp()
 
 void HMI_O9000EFlow()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3698,6 +3701,7 @@ void HMI_BedTemp()
 
 void HMI_O9000BedTemp()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3842,6 +3846,7 @@ void HMI_FanSpeed()
 
 void HMI_O9000FanSpeed()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3930,6 +3935,7 @@ void HMI_PrintSpeed()
 
 void HMI_O9000PrintSpeed()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -5787,7 +5793,7 @@ void HMI_O900PauseOrStop()
           SERIAL_ECHOLN("M79 S2"); // 3:cloud print pause
         }
        
-        DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
+        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
 
         // Queue.inject p(pstr("m25"));
         RUN_AND_WAIT_GCODE_CMD("M25", true);
@@ -5797,7 +5803,7 @@ void HMI_O900PauseOrStop()
       else
       {
        
-        DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
+        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
       }
     }
     else if (select_print.now == 2)
@@ -5837,7 +5843,7 @@ void HMI_O900PauseOrStop()
       }
       else
         
-      DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
+      DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
       // cancel stop
     }
   }
@@ -8125,7 +8131,8 @@ void HMI_O9000()
         // queue.enqueue_now_P(PSTR("M24"));
         // gcode.process_subcommands_now_P(PSTR("M24"));
         updateOctoData = false;
-        DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
+        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
+
       }
       else
       {
@@ -8210,7 +8217,8 @@ void HMI_O9000Tune()
       select_print.set(0);
       // SERIAL_ECHOLNPAIR("returning from Tune menu with FN as: ", vvfilename);
       
-      DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
+      DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
+
     }
     break;
     case TUNE_CASE_SPEED: // Print speed

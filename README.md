@@ -10,7 +10,7 @@
 >
 > **My fork changes includes:**
 >
->  - [x] The 7x7 Mesh to 5x5
+>  - [x] The 7x7 Mesh
 >  - [x] Increase the Z distance when M600(change filament) is invoked to provide enough space to change and purge the filament.
 >  - [x] Added M117 Support to show Messages in the LCD Screen.
 >  - [x] Added the detailed page and controls of a Print Job Coming from Octoprint to be shown in the LCD.

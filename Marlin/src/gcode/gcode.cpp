@@ -1628,6 +1628,10 @@ void GcodeSuite::process_parsed_command(const bool no_ok /*=false*/)
       //SERIAL_ECHOLN("Got O9001");
       O9001();
       break;
+    case 9002:
+      //SERIAL_ECHOLN("Got O9002");
+      O9002();
+      break;  
 
     }
   break;

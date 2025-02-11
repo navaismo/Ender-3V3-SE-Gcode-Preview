@@ -10381,9 +10381,9 @@ void DWIN_OctoJobFinish()
   }
 }
 
-void DWIN_RenderImageMap(){
-  uint16_t x_start = 2; 
-  uint16_t y_start = 25;
+void DWIN_RenderOctoImageMap(){
+  uint16_t x_start = 2;  // Starting X position
+  uint16_t y_start = 25; // Starting Y position
 
   updateOctoData = false;
   checkkey = OctoFinish;
@@ -10391,22 +10391,35 @@ void DWIN_RenderImageMap(){
   Clear_Title_Bar();
   Clear_Main_Window();
 
-   // show print done confirm
-   if (HMI_flag.language < Language_Max) // Rock 20211120
-   {
-     DWIN_ICON_Show(HMI_flag.language, LANGUAGE_LEVEL_FINISH, TITLE_X, TITLE_Y);
-     DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, OK_BUTTON_X, 225);
-   }
+  // Show print done confirm
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_LEVEL_FINISH, TITLE_X, TITLE_Y);
+    DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, OK_BUTTON_X, 225);
+  }
 
-  for (uint16_t y = 0; y < IMAGE_HEIGHT; y++) {
-    for (uint16_t x = 0; x < IMAGE_WIDTH; x++) {
-        uint16_t color = ImageMap[y * IMAGE_WIDTH + x];
-        DWIN_Draw_Rectangle(1, color, x_start + x, y_start + y, x_start + x, y_start + y);
+  millis_t last_watchdog_refresh = millis();  // Store the last refresh time
+  // Render the image pixel by pixel
+  for (uint16_t y = 0; y < OctoIMAGE_HEIGHT && (y_start + y) < 240; y++) {
+    for (uint16_t x = 0; x < OctoIMAGE_WIDTH && (x_start + x) < 320; x++) {
+        uint16_t color = OctoImageMap[y * OctoIMAGE_WIDTH + x];
+        
+        // Ensure each "pixel" is exactly 1x1
+        DWIN_Draw_Rectangle(1, color, x_start + x, y_start + y, x_start + x + 1, y_start + y + 1);
+        delay(3);  // Delay to prevent flickering
+        // Refresh watchdog every 4000ms (4 seconds)
+        if (millis() - last_watchdog_refresh >= 4000) {
+          HAL_watchdog_refresh();
+          last_watchdog_refresh = millis();  // Reset timer
+        }
+
+        if (millis() - last_watchdog_refresh >= 2000) {
+          DWIN_UpdateLCD();
+          last_watchdog_refresh = millis();  // Reset timer
+        }
     }
   }
 
-
-
+  
 }
 
 

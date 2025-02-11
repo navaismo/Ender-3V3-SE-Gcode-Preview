@@ -639,11 +639,11 @@ extern enum DC_language current_language;
 
 //octo imagemap
 // Define the size of the ImageMap array
-#define IMAGE_MAP_SIZE 9216  // Adjust this size based on your image dimensions
+#define OctoIMAGE_MAP_SIZE 9216  // Adjust this size based on your image dimensions
 // Declare the ImageMap array
-#define IMAGE_WIDTH 48
-#define IMAGE_HEIGHT 48
-extern uint16_t ImageMap[IMAGE_MAP_SIZE];
+#define OctoIMAGE_WIDTH 96
+#define OctoIMAGE_HEIGHT 96
+extern uint16_t OctoImageMap[OctoIMAGE_MAP_SIZE];
 
 
 extern volatile uint8_t checkkey;
@@ -877,7 +877,7 @@ void clearOctoScrollVars();
 // Set Values for updates
 void DWIN_SetPrintingDetails(const char *eta, const char *progress, const char *current_layer);
 // Render Image Map
-void DWIN_RenderImageMap();
+void DWIN_RenderOctoImageMap();
 
 void DWIN_CompletedHoming();
 void DWIN_CompletedHeight();

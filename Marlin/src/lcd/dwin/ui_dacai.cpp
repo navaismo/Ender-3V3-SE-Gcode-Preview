@@ -688,10 +688,11 @@ bool UI_SHOW_t::UI_SendJpegDateHandshake(unsigned long size, const char *path)
     // 发送命令帧 -- dwin_uart_write 这个接口传入的字节长度不要超255 -- Send command frame -- dwin_uart_write The byte length passed in by this interface should not exceed 255
     for (sendPacket = 0; sendPacket < jpgSize / DACAI_JPG_BYTES_PER_PACKET; sendPacket++)
     {
-      // SERIAL_ECHOLN(sendPacket);
-      // SERIAL_ECHOLN(arr_data_num);
+      SERIAL_ECHOLN(sendPacket);
+      SERIAL_ECHOLN(arr_data_num);
       databuf[2] = (arr_data_num) >> 8;
       databuf[3] = (arr_data_num) & 0xFF;
+      
       arr_data_num += 120;
       memcpy(&databuf[4], &jpeg[sendPacket * DACAI_JPG_BYTES_PER_PACKET], DACAI_JPG_BYTES_PER_PACKET);
       watchdog_refresh();

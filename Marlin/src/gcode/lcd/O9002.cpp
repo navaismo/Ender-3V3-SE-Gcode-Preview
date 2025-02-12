@@ -4,6 +4,7 @@
 #include "../parser.h"
 #include "../../lcd/dwin/e3v2/dwin.h"
 #include "../../lcd/marlinui.h"
+#include "../../lcd/dwin/e3v2/lcd_rts.h"
 
 /*void sendImageMap() {
     SERIAL_ECHOLN("Sending ImageMap array:");
@@ -20,13 +21,16 @@
  *   O9002|data1,data2,data3...data20
  *   O9002|END
  */
+
+static int mypicBufIndex = 0; 
 void GcodeSuite::O9002() {
     // Ensure parser.string_arg is not null.
     if (parser.string_arg && parser.string_arg[0] != '\0') {
         // Handle START command to initialize/reset.
         if (strncmp(parser.string_arg, "START", 5) == 0) {
             // (Optional) Parse dimensions if needed.
-            memset(OctoImageMap, 0, sizeof(OctoImageMap));
+            //memset(mypicBuf, 0, sizeof(mypicBuf));
+            mypicBufIndex = 0;
             SERIAL_ECHOLN("O9002 START: Image map cleared.");
             return;
         }

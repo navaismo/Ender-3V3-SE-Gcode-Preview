@@ -69,6 +69,7 @@ lin 3D Printer Firmware
 #endif
 
 #include "lcd_rts.h"
+#include "../../dwin/ui_dacai.h"
 #include "../../../module/AutoOffset.h"
 
 #include <QRCodeGenerator.h>
@@ -10399,30 +10400,28 @@ void DWIN_RenderOctoImageMap() {
   HMI_flag.Refresh_bottom_flag = true;
   Clear_Title_Bar();
   Clear_Main_Window();
-
+  
   // Show print done confirm
-  if (HMI_flag.language < Language_Max) {
-    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_LEVEL_FINISH, TITLE_X, TITLE_Y);
-    DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, OK_BUTTON_X, 225);
-  }
+  //if (HMI_flag.language < Language_Max) {
+  //  DWIN_ICON_Show(HMI_flag.language, LANGUAGE_LEVEL_FINISH, TITLE_X, TITLE_Y);
+  //  DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, OK_BUTTON_X, 225);
+  //}
   
   millis_t last_watchdog_refresh = millis();  // Store the last refresh time
   // Render the image pixel by pixel
-  for (uint16_t y = 0; y < OctoIMAGE_HEIGHT && (y_start + y) < 240; y++) {
-    for (uint16_t x = 0; x < OctoIMAGE_WIDTH && (x_start + x) < 320; x++) {
+  for (uint16_t y = 0; y < OctoIMAGE_HEIGHT && (y_start + y) < 320; y++) {
+    for (uint16_t x = 0; x < OctoIMAGE_WIDTH && (x_start + x) < 240; x++) {
       uint16_t color = OctoImageMap[y * OctoIMAGE_WIDTH + x]; // Fixed indexing
-
       // Draw a single pixel as a filled 1x1 rectangle
       DWIN_Draw_Rectangle(1, color, x_start + x, y_start + y, x_start + x, y_start + y);
-      delay(3); // Delay to avoid flickering
-
+      delay(7);
       // // Refresh watchdog every 4000ms (4 seconds)
-      // if (millis() - last_watchdog_refresh >= 1250) {
-      //   HAL_watchdog_refresh();
-      //   last_watchdog_refresh = millis();  // Reset timer
-      // }
-      
+       if (millis() - last_watchdog_refresh >= 1250) {
+         HAL_watchdog_refresh();
+         last_watchdog_refresh = millis();  // Reset timer
+       }      
     }
+    
   }
 }
 

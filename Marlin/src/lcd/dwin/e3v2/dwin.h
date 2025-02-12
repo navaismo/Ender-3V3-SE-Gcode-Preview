@@ -638,11 +638,11 @@ extern enum DC_language current_language;
 #define All_Black         0x0000  // Selected color
 
 //octo imagemap
-// Define the size of the ImageMap array
-#define OctoIMAGE_MAP_SIZE 9216  // Adjust this size based on your image dimensions
 // Declare the ImageMap array
-#define OctoIMAGE_WIDTH 96
-#define OctoIMAGE_HEIGHT 96
+#define OctoIMAGE_WIDTH 16
+#define OctoIMAGE_HEIGHT 16
+// Define the size of the ImageMap array
+#define OctoIMAGE_MAP_SIZE (OctoIMAGE_WIDTH * OctoIMAGE_HEIGHT)
 extern uint16_t OctoImageMap[OctoIMAGE_MAP_SIZE];
 
 

@@ -5,6 +5,13 @@
 #include "../../lcd/dwin/e3v2/dwin.h"
 #include "../../lcd/marlinui.h"
 
+/*void sendImageMap() {
+    SERIAL_ECHOLN("Sending ImageMap array:");
+    for (int i = 0; i < OctoIMAGE_MAP_SIZE; i++) {
+        SERIAL_ECHOLNPAIR("Pixel ", i);
+        SERIAL_ECHOLNPAIR(": ", OctoImageMap[i]);
+    }
+}*/
 
 /**
  * O9002: Fill Marlin Variable ImageMap with incoming data
@@ -14,42 +21,49 @@
  *   O9002|END
  */
 void GcodeSuite::O9002() {
+    // Ensure parser.string_arg is not null.
     if (parser.string_arg && parser.string_arg[0] != '\0') {
-        // Check for end-of-data command
-        if (strcmp(parser.string_arg, "END") == 0) {
-            SERIAL_ECHOLN("ImageMap array has been filled successfully");
-            DWIN_RenderOctoImageMap();
+        // Handle START command to initialize/reset.
+        if (strncmp(parser.string_arg, "START", 5) == 0) {
+            // (Optional) Parse dimensions if needed.
+            memset(OctoImageMap, 0, sizeof(OctoImageMap));
+            SERIAL_ECHOLN("O9002 START: Image map cleared.");
             return;
         }
 
-        // Tokenize the incoming string argument using '|' as the delimiter
-        char *token = strtok(parser.string_arg, "|");
-        while (token != nullptr) {
-            // Check if the token is the end-of-data command
-            if (strcmp(token, "END") == 0) {
-                SERIAL_ECHOLN("ImageMap array has been filled successfully");
-                DWIN_RenderOctoImageMap();
-                return;
+        // Handle END command to finalize.
+        if (strcmp(parser.string_arg, "END") == 0) {
+            SERIAL_ECHOLN("O9002 END: Image map complete.");
+            //sendImageMap();          // For example, echo the image data.
+            DWIN_RenderOctoImageMap();// Trigger display update.
+            return;
+        }
+
+        // Handle CHUNK command.
+        if (strncmp(parser.string_arg, "CHUNK", 5) == 0) {
+            // Skip the "CHUNK" part.
+            char *arg = parser.string_arg + 5;
+            while (*arg && isspace(*arg)) arg++;
+            // Tokenize using '|' to separate index and pixel data.
+            char *token = strtok(arg, "|");
+            if (token != nullptr) {
+                int chunk_start = atoi(token);
+                token = strtok(nullptr, "|");
+                if (token != nullptr) {
+                    // Tokenize the pixel data by commas.
+                    char *pixel_token = strtok(token, ",");
+                    int local_index = chunk_start;
+                    while (pixel_token != nullptr && local_index < OctoIMAGE_MAP_SIZE) {
+                        uint16_t pixel_value = static_cast<uint16_t>(atoi(pixel_token));
+                        //SERIAL_ECHOLNPAIR("Val: ", pixel_value);
+                        OctoImageMap[local_index] = pixel_value;
+                        //SERIAL_ECHOLNPAIR("IMGidxVal: ", OctoImageMap[local_index]);
+                        local_index++;
+                        pixel_token = strtok(nullptr, ",");
+                    }
+                }
             }
-
-            // Tokenize the pixel data using ',' as the delimiter
-            char *pixel_token = strtok(token, ",");
-            int index = 0;
-
-            // Parse each pixel token and store it in the ImageMap array
-            while (pixel_token != nullptr && index < OctoIMAGE_MAP_SIZE) {
-                OctoImageMap[index] = static_cast<uint16_t>(atoi(pixel_token));
-                pixel_token = strtok(nullptr, ",");
-                index++;
-            }
-
-            // Handle any remaining tokens or errors if necessary
-            if (index >= OctoIMAGE_MAP_SIZE) {
-                SERIAL_ECHOLN("ImageMap array is full, some data may be lost");
-            }
-
-            // Get the next token
-            token = strtok(nullptr, "|");
+            return;
         }
     }
 }

@@ -28,8 +28,10 @@ void GcodeSuite::O9002() {
     if (parser.string_arg && parser.string_arg[0] != '\0') {
         // Handle START command to initialize/reset.
         if (strncmp(parser.string_arg, "START", 5) == 0) {
-            // (Optional) Parse dimensions if needed.
-            //memset(mypicBuf, 0, sizeof(mypicBuf));
+
+            initializeImageMap();
+            Clear_Title_Bar();
+            Draw_OctoTitle("Receiving Thumbnail, wait...");
             mypicBufIndex = 0;
             SERIAL_ECHOLN("O9002 START: Image map cleared.");
             return;

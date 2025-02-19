@@ -26,7 +26,7 @@
  */
 #ifndef SHORT_BUILD_VERSION
   #if ENABLED(HIGH_SPEED_1)
-    #define SHORT_BUILD_VERSION "V1.0.9.7_8TH1.98a"
+    #define SHORT_BUILD_VERSION "V1.0.9.7_8Tune1"
   #else
     #define SHORT_BUILD_VERSION "Ender-3V3 SE_Ten_P1T14T" // GD32F303RET6 + Multilanguage 1.Chinese 2.English 3.German 4.Russian 5.French 6.Turkish 7.Spanish 8.Italian 9.Portuguese
   #endif  
@@ -46,7 +46,7 @@
  * version was tagged.
  */
 #ifndef STRING_DISTRIBUTION_DATE
-  #define STRING_DISTRIBUTION_DATE "2025-02-12"
+  #define STRING_DISTRIBUTION_DATE "2025-02-19"
 #endif
 
 /**
@@ -54,7 +54,7 @@
  * Set based on the release version number. Used to catch an attempt to use
  * older configurations. Override these if using a custom versioning scheme
  * to alert users to major changes.
- */
+ **/
 
 #define MARLIN_HEX_VERSION 02000801
 #ifndef REQUIRED_CONFIGURATION_H_VERSION
@@ -64,7 +64,7 @@
   #define REQUIRED_CONFIGURATION_ADV_H_VERSION MARLIN_HEX_VERSION
 #endif
 
-/**
+/*
  * The protocol for communication to the host. Protocol indicates communication
  * standards such as the use of ASCII, "echo:" and "error:" line prefixes, etc.
  * (Other behaviors are given by the firmware version and capabilities report.)

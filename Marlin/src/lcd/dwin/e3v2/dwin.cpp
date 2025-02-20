@@ -1993,7 +1993,8 @@ void Item_Tune_Zoffset(const uint8_t row)
 void Draw_Tune_Menu()
 {
   Clear_Main_Window();
-  Draw_Mid_Status_Area(true); // rock_20230529 //Update all parameters once
+  HMI_flag.Refresh_bottom_flag = false;
+  //Draw_Mid_Status_Area(true); // rock_20230529 //Update all parameters once
 
   const int16_t scroll = MROWS - index_tune; // Scrolled-up lines
 #define TSCROL(L) (scroll + (L))
@@ -2040,56 +2041,179 @@ void Draw_Tune_Menu()
     Draw_Menu_Cursor(TSCROL(select_tune.now));
 }
 
+// ! Start new menu tests <<<<<<<<<<<<<<
+
+constexpr uint16_t TUNE_MENU_START_X = 0;
+constexpr uint16_t TUNE_MENU_START_Y = 123;
+constexpr uint16_t OctoMROWS = 4;
+uint8_t octo_index_tune = OctoMROWS,
+        octo_index_prepare = OctoMROWS,
+        octo_index_temp = OctoMROWS;
+#define OCTO_MBASE(L) (TUNE_MENU_START_Y + 36 + MLINE * (L))
+
+
+void Octo_Draw_Menu_Cursor(const uint8_t line) {
+  DWIN_Draw_Rectangle(1, Rectangle_Color, 0, OCTO_MBASE(line) - 8, 10, OCTO_MBASE(line + 1) - 12);
+}
+
+void Erase_Menu_Cursor_Octo(const uint8_t line) {
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, OCTO_MBASE(line) - 8, 10, OCTO_MBASE(line + 1) - 12);
+}
+
+
+void Move_Highlight_Octo(const int16_t from, const uint16_t newline) {
+  Erase_Menu_Cursor_Octo(newline - from);
+  Octo_Draw_Menu_Cursor(newline);
+}
+
+void Add_Menu_Line_Octo() {
+  Move_Highlight_Octo(1, OctoMROWS);
+  DWIN_Draw_Line(Line_Color, 16, OCTO_MBASE(OctoMROWS + 1) - 10, BLUELINE_X, OCTO_MBASE(OctoMROWS + 1) - 10);
+}
+
+void Scroll_Menu_Octo(const uint8_t dir) {
+  HMI_flag.Refresh_bottom_flag = false;
+  DWIN_Frame_AreaMove(1, dir, MLINE, Color_Bg_Black, 11, TUNE_MENU_START_Y, DWIN_WIDTH - 1, 320 - 1); // Pan interface
+  switch (dir) {
+    case DWIN_SCROLL_DOWN:
+      Move_Highlight_Octo(-1, 0);
+      break;
+    case DWIN_SCROLL_UP:
+      Add_Menu_Line_Octo();
+      break;
+  }
+}
+
+
+void Octo_Draw_Menu_Icon(const uint8_t line, const uint8_t icon) {
+  DWIN_ICON_Not_Filter_Show(ICON, icon, 20, OCTO_MBASE(line));
+}
+
+void Octo_Draw_More_Icon(uint8_t line) {
+    DWIN_ICON_Show(ICON, ICON_More, 208, OCTO_MBASE(line) - 3);
+  }
+
+void Octo_Draw_Menu_Line(const uint8_t line, const uint8_t icon = 0, const char *const label = nullptr, bool more = false) {
+  if (label)
+    DWIN_Draw_String(false, false, font8x16, Color_White, Color_Bg_Black, LBLX, OCTO_MBASE(line) - 1, (char *)label);
+  if (icon)
+    Octo_Draw_Menu_Icon(line, icon);
+  if (more)
+    Octo_Draw_More_Icon(line);
+}
+
+
+void Octo_Draw_Back_Label() {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Back, 42, OCTO_MBASE(0) + JPN_OFFSET);
+  } else {
+    DWIN_Frame_AreaCopy(1, 226, 179, BLUELINE_X, 189, LBLX, OCTO_MBASE(0));
+  }
+}
+
+
+void Octo_Draw_Back_First(const bool is_sel = true) {
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, TUNE_MENU_START_X + 10, OCTO_MBASE(0) - 9, 239, OCTO_MBASE(0) + 18);
+  Octo_Draw_Menu_Line(0, ICON_Back);
+  Octo_Draw_Back_Label();
+  if (is_sel)
+    Octo_Draw_Menu_Cursor(0);
+}
+
+void Octo_Item_Tune_Speed(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_PrintSpeed, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Line(row, ICON_Speed);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(row) + PRINT_SET_OFFSET, feedrate_percentage);
+  }
+}
+
+void Octo_Item_Tune_Temp(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Hotend, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Line(row, ICON_HotendTemp);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(row) + PRINT_SET_OFFSET, thermalManager.degTargetHotend(0));
+  }
+}
+
+void Octo_Item_Tune_Flow(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_MoveE, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Line(row, ICON_StepE);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(row) + PRINT_SET_OFFSET, planner.flow_percentage[0]);
+  }
+}
+
+void Octo_Item_Tune_Bed(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Bedend, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Line(row, ICON_BedTemp);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(row) + PRINT_SET_OFFSET, thermalManager.degTargetBed());
+  }
+}
+
+void Octo_Item_Tune_Fan(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Fan, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Line(row, ICON_FanSpeed);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(row) + PRINT_SET_OFFSET, thermalManager.fan_speed[0]);
+  }
+}
+
+void Octo_Item_Tune_Zoffset(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Zoffset, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Icon(row, ICON_Zoffset);
+    Octo_Draw_Menu_Line(row, ICON_Zoffset);
+    DWIN_Draw_Signed_Float(font8x16, Color_Bg_Black, 2, 2, VALUERANGE_X - 14, OCTO_MBASE(row), BABY_Z_VAR * 100);
+  }
+}
+
 
 
 void Draw_OctoTune_Menu()
 {
   Clear_Octo_Area();
-  //Draw_Mid_Status_Area(true); // rock_20230529 //Update all parameters once
+  HMI_flag.Refresh_bottom_flag = true;
+  const int16_t Oscroll = OctoMROWS - octo_index_tune; // Scrolled-up lines
+#define OTSCROL(L) (Oscroll + (L))
+#define OTVISI(L) WITHIN(OTSCROL(L), 0, OctoMROWS)
 
-  const int16_t scroll = MROWS - index_tune; // Scrolled-up lines
-#define TSCROL(L) (scroll + (L))
-#define TVISI(L) WITHIN(TSCROL(L), 0, MROWS)
+if (HMI_flag.language < Language_Max) {
+  DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y); // Title
+} else {
+  ;
+}
 
-
-  if (HMI_flag.language < Language_Max)
-  {
-    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, TITLE_X, 124); // Title
-  }
-  else
-  {
-    ;
-  }
-
-  if(TVISI(0))
-    Draw_Back_First(select_tune.now == 0);  // < Back
-  if(TVISI(TUNE_CASE_SPEED))
-    Item_Tune_Speed(TSCROL(TUNE_CASE_SPEED));  // Speed
-   
+if (OTVISI(0))
+  Octo_Draw_Back_First(select_tune.now == 0);  // < Back
+if (OTVISI(TUNE_CASE_SPEED))
+  Octo_Item_Tune_Speed(OTSCROL(TUNE_CASE_SPEED));  // Speed
+ 
 #if HAS_HOTEND
-    if(TVISI(TUNE_CASE_TEMP))
-      Item_Tune_Temp(TSCROL(TUNE_CASE_TEMP));  // Hotend Temp
+  if (OTVISI(TUNE_CASE_TEMP))
+    Octo_Item_Tune_Temp(OTSCROL(TUNE_CASE_TEMP));  // Hotend Temp
 
-    if(TVISI(TUNE_CASE_FLOW))
-      Item_Tune_Flow(TSCROL(TUNE_CASE_FLOW));  // Flow
+  if (OTVISI(TUNE_CASE_FLOW))
+    Octo_Item_Tune_Flow(OTSCROL(TUNE_CASE_FLOW));  // Flow
 #endif
 
 #if HAS_HEATED_BED
-  if(TVISI(TUNE_CASE_BED))
-    Item_Tune_Bed(TSCROL(TUNE_CASE_BED));  // Bed Temp
+  if (OTVISI(TUNE_CASE_BED))
+    Octo_Item_Tune_Bed(OTSCROL(TUNE_CASE_BED));  // Bed Temp
 #endif
 
 #if HAS_FAN 
-  if(TVISI(TUNE_CASE_FAN))
-    Item_Tune_Fan(TSCROL(TUNE_CASE_FAN));  // Fan Speed
+  if (OTVISI(TUNE_CASE_FAN))
+    Octo_Item_Tune_Fan(OTSCROL(TUNE_CASE_FAN));  // Fan Speed
 #endif
 #if HAS_ZOFFSET_ITEM
-  if(TVISI(TUNE_CASE_ZOFF))
-    Item_Tune_Zoffset(TSCROL(TUNE_CASE_ZOFF));  // Z offset
+  if (OTVISI(TUNE_CASE_ZOFF))
+    Octo_Item_Tune_Zoffset(OTSCROL(TUNE_CASE_ZOFF));  // Z offset
 #endif
-  
-  if (select_tune.now)
-    Draw_Menu_Cursor(TSCROL(select_tune.now));
+
+if (select_tune.now)
+  Octo_Draw_Menu_Cursor(OTSCROL(select_tune.now));
 }
 
 void draw_qrcode(const uint16_t topLeftX, const uint16_t topLeftY, const uint8_t moduleSize, const char *qrcode_data) {
@@ -2821,7 +2945,7 @@ void Clear_Octo_UpperArea(){
 }
 void Clear_Octo_Area()
 {
-  DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, 123, 240, 320);
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, 123, 240, 319);
 }
 
 
@@ -3470,6 +3594,7 @@ void HMI_Zoffset()
 
 void HMI_O9000Zoffset()
 {
+  HMI_flag.Refresh_bottom_flag = true;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3477,10 +3602,10 @@ void HMI_O9000Zoffset()
     switch (HMI_ValueStruct.show_mode)
     {
     case -4:
-      zoff_line = PREPARE_CASE_ZOFF + MROWS - index_prepare;
+      zoff_line = PREPARE_CASE_ZOFF + OctoMROWS - octo_index_prepare;
       break;
     default:
-      zoff_line = TUNE_CASE_ZOFF + MROWS - index_tune;
+      zoff_line = TUNE_CASE_ZOFF + OctoMROWS - octo_index_tune;
     }
     if (Apply_Encoder(encoder_diffState, HMI_ValueStruct.offset_value))
     {
@@ -3496,7 +3621,7 @@ void HMI_O9000Zoffset()
       // SERIAL_ECHOLNPAIR("pl write time:", end -start);
 #endif
       checkkey = HMI_ValueStruct.show_mode == -4 ? Prepare : O9000Tune;
-      DWIN_Draw_Signed_Float(font8x16, Color_Bg_Black, 2, 2, VALUERANGE_X - 14, MBASE(zoff_line), TERN(HAS_BED_PROBE, BABY_Z_VAR * 100, HMI_ValueStruct.offset_value));
+      DWIN_Draw_Signed_Float(font8x16, Color_Bg_Black, 2, 2, VALUERANGE_X - 14, OCTO_MBASE(zoff_line), TERN(HAS_BED_PROBE, BABY_Z_VAR * 100, HMI_ValueStruct.offset_value));
       DWIN_UpdateLCD();
       return;
     }
@@ -3508,7 +3633,7 @@ void HMI_O9000Zoffset()
     // serialprintPGM("d:babystep\n");
     babystep.add_mm(Z_AXIS, dwin_zoffset - last_zoffset);
 #endif
-    DWIN_Draw_Signed_Float(font8x16, Select_Color, 2, 2, VALUERANGE_X - 14, MBASE(zoff_line), HMI_ValueStruct.offset_value);
+    DWIN_Draw_Signed_Float(font8x16, Select_Color, 2, 2, VALUERANGE_X - 14, OCTO_MBASE(zoff_line), HMI_ValueStruct.offset_value);
     DWIN_UpdateLCD();
   }
 }
@@ -3594,7 +3719,7 @@ void HMI_O9000ETemp()
     switch (HMI_ValueStruct.show_mode)
     {
     case -1:
-      temp_line = select_temp.now + MROWS - index_temp;
+      temp_line = select_temp.now + OctoMROWS - octo_index_temp;
       break;
     case -2:
       temp_line = PREHEAT_CASE_TEMP;
@@ -3603,7 +3728,7 @@ void HMI_O9000ETemp()
       temp_line = PREHEAT_CASE_TEMP;
       break;
     default:
-      temp_line = TUNE_CASE_TEMP + MROWS - index_tune;
+      temp_line = TUNE_CASE_TEMP + OctoMROWS - octo_index_tune;
     }
 
     if (Apply_Encoder(encoder_diffState, HMI_ValueStruct.E_Temp))
@@ -3615,25 +3740,25 @@ void HMI_O9000ETemp()
       {
         checkkey = PLAPreheat;
         ui.material_preset[0].hotend_temp = HMI_ValueStruct.E_Temp;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(temp_line) + TEMP_SET_OFFSET, ui.material_preset[0].hotend_temp);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(temp_line) + TEMP_SET_OFFSET, ui.material_preset[0].hotend_temp);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -3)
       {
         checkkey = ABSPreheat;
         ui.material_preset[1].hotend_temp = HMI_ValueStruct.E_Temp;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(temp_line) + TEMP_SET_OFFSET, ui.material_preset[1].hotend_temp);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(temp_line) + TEMP_SET_OFFSET, ui.material_preset[1].hotend_temp);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -1) // Temperature
       {
         checkkey = TemperatureID;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(temp_line) + TEMP_SET_OFFSET, HMI_ValueStruct.E_Temp);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(temp_line) + TEMP_SET_OFFSET, HMI_ValueStruct.E_Temp);
       }
       else
       {
         checkkey = O9000Tune;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(temp_line) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Temp);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(temp_line) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Temp);
       }
 #if ENABLED(USE_SWITCH_POWER_200W)
       while ((thermalManager.degTargetBed() > 0) && (ABS(thermalManager.degTargetBed() - thermalManager.degBed()) > TEMP_WINDOW))
@@ -3648,9 +3773,9 @@ void HMI_O9000ETemp()
     LIMIT(HMI_ValueStruct.E_Temp, HEATER_0_MINTEMP, thermalManager.hotend_max_target(0));
     // E_Temp value
     if (0 == HMI_ValueStruct.show_mode)
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(temp_line) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Temp);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(temp_line) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Temp);
     else
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(temp_line) + TEMP_SET_OFFSET, HMI_ValueStruct.E_Temp);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(temp_line) + TEMP_SET_OFFSET, HMI_ValueStruct.E_Temp);
   }
 }
 
@@ -3665,7 +3790,7 @@ void HMI_O9000EFlow()
       checkkey = O9000Tune;
       EncoderRate.enabled = false;
       ui.material_preset[0].flow_rate = HMI_ValueStruct.E_Flow;
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(select_tune.now + MROWS - index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Flow);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(select_tune.now + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Flow);
       planner.set_flow(0, HMI_ValueStruct.E_Flow);
       return;
     }
@@ -3673,10 +3798,10 @@ void HMI_O9000EFlow()
     LIMIT(HMI_ValueStruct.E_Flow, FLOW_MINVAL, FLOW_MAXVAL);
     // E_Flow value
     if (0 == HMI_ValueStruct.show_mode)
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(select_tune.now + MROWS - index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Flow);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(select_tune.now + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Flow);
       
     else
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(select_tune.now + MROWS - index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Flow);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(select_tune.now + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Flow);
       
   }
 }
@@ -3790,6 +3915,7 @@ void HMI_BedTemp()
 
 void HMI_O9000BedTemp()
 {
+  HMI_flag.Refresh_bottom_flag = true;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3797,7 +3923,7 @@ void HMI_O9000BedTemp()
     switch (HMI_ValueStruct.show_mode)
     {
     case -1:
-      bed_line = select_temp.now + MROWS - index_temp;
+      bed_line = select_temp.now + OctoMROWS - octo_index_temp;
       break;
     case -2:
       bed_line = PREHEAT_CASE_BED;
@@ -3806,7 +3932,7 @@ void HMI_O9000BedTemp()
       bed_line = PREHEAT_CASE_BED;
       break;
     default:
-      bed_line = TUNE_CASE_BED + MROWS - index_tune;
+      bed_line = TUNE_CASE_BED + OctoMROWS - octo_index_tune;
     }
     // Bed_Temp limit
     LIMIT(HMI_ValueStruct.Bed_Temp, BED_MINTEMP, BED_MAX_TARGET);
@@ -3819,25 +3945,25 @@ void HMI_O9000BedTemp()
       {
         checkkey = PLAPreheat;
         ui.material_preset[0].bed_temp = HMI_ValueStruct.Bed_Temp;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(bed_line) + TEMP_SET_OFFSET, ui.material_preset[0].bed_temp);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(bed_line) + TEMP_SET_OFFSET, ui.material_preset[0].bed_temp);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -3)
       {
         checkkey = ABSPreheat;
         ui.material_preset[1].bed_temp = HMI_ValueStruct.Bed_Temp;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(bed_line) + TEMP_SET_OFFSET, ui.material_preset[1].bed_temp);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(bed_line) + TEMP_SET_OFFSET, ui.material_preset[1].bed_temp);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -1)
       {
         checkkey = TemperatureID;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(bed_line) + TEMP_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(bed_line) + TEMP_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
       }
       else
       {
         checkkey = O9000Tune;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(bed_line) + PRINT_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(bed_line) + PRINT_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
       }
 #if ENABLED(USE_SWITCH_POWER_200W)
       while (((thermalManager.degTargetHotend(0) > 0) && ABS(thermalManager.degTargetHotend(0) - thermalManager.degHotend(0)) > TEMP_WINDOW))
@@ -3853,11 +3979,11 @@ void HMI_O9000BedTemp()
     // Bed_Temp value
     if (0 == HMI_ValueStruct.show_mode)
     {
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(bed_line) + PRINT_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(bed_line) + PRINT_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
     }
     else
     {
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(bed_line) + TEMP_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(bed_line) + TEMP_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
     }
   }
 }
@@ -3934,6 +4060,7 @@ void HMI_FanSpeed()
 
 void HMI_O9000FanSpeed()
 {
+  HMI_flag.Refresh_bottom_flag = true;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3941,7 +4068,7 @@ void HMI_O9000FanSpeed()
     switch (HMI_ValueStruct.show_mode)
     {
     case -1:
-      fan_line = select_temp.now + MROWS - index_temp;
+      fan_line = select_temp.now + OctoMROWS - octo_index_temp;
       break;
     case -2:
       fan_line = PREHEAT_CASE_FAN;
@@ -3951,7 +4078,7 @@ void HMI_O9000FanSpeed()
       break;
     // case -4: fan_line = TEMP_CASE_FAN + MROWS -index_temp;break;
     default:
-      fan_line = TUNE_CASE_FAN + MROWS - index_tune;
+      fan_line = TUNE_CASE_FAN + OctoMROWS - octo_index_tune;
     }
 
     if (Apply_Encoder(encoder_diffState, HMI_ValueStruct.Fan_speed))
@@ -3961,25 +4088,25 @@ void HMI_O9000FanSpeed()
       {
         checkkey = PLAPreheat;
         ui.material_preset[0].fan_speed = HMI_ValueStruct.Fan_speed;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(fan_line) + TEMP_SET_OFFSET, ui.material_preset[0].fan_speed);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(fan_line) + TEMP_SET_OFFSET, ui.material_preset[0].fan_speed);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -3)
       {
         checkkey = ABSPreheat;
         ui.material_preset[1].fan_speed = HMI_ValueStruct.Fan_speed;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(fan_line) + TEMP_SET_OFFSET, ui.material_preset[1].fan_speed);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(fan_line) + TEMP_SET_OFFSET, ui.material_preset[1].fan_speed);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -1)
       {
         checkkey = TemperatureID;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(fan_line) + TEMP_SET_OFFSET, HMI_ValueStruct.Fan_speed);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(fan_line) + TEMP_SET_OFFSET, HMI_ValueStruct.Fan_speed);
       }
       else
       {
         checkkey = O9000Tune;
-        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(fan_line) + PRINT_SET_OFFSET, HMI_ValueStruct.Fan_speed);
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(fan_line) + PRINT_SET_OFFSET, HMI_ValueStruct.Fan_speed);
       }
       thermalManager.set_fan_speed(0, HMI_ValueStruct.Fan_speed);
       return;
@@ -3989,11 +4116,11 @@ void HMI_O9000FanSpeed()
     // Fan_speed value
     if (0 == HMI_ValueStruct.show_mode)
     {
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(fan_line) + PRINT_SET_OFFSET, HMI_ValueStruct.Fan_speed);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(fan_line) + PRINT_SET_OFFSET, HMI_ValueStruct.Fan_speed);
     }
     else
     {
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(fan_line) + TEMP_SET_OFFSET, HMI_ValueStruct.Fan_speed);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(fan_line) + TEMP_SET_OFFSET, HMI_ValueStruct.Fan_speed);
     }
   }
 }
@@ -4030,13 +4157,13 @@ void HMI_O9000PrintSpeed()
       checkkey = O9000Tune;
       EncoderRate.enabled = false;
       feedrate_percentage = HMI_ValueStruct.print_speed;
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(select_tune.now + MROWS - index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.print_speed);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(select_tune.now + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.print_speed);
       return;
     }
     // print_speed limit
     LIMIT(HMI_ValueStruct.print_speed, MIN_PRINT_SPEED, MAX_PRINT_SPEED);
     // print_speed value
-    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(select_tune.now + MROWS - index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.print_speed);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(select_tune.now + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.print_speed);
   }
 }
 
@@ -8245,7 +8372,7 @@ void HMI_O9000()
 }
 
 // octo tune
-void HMI_O9000Tune()
+/*void HMI_O9000Tune()
 {
   updateOctoData=false;
   ENCODER_DiffState encoder_diffState = get_encoder_state();
@@ -8372,7 +8499,125 @@ void HMI_O9000Tune()
     }
   }
   DWIN_UpdateLCD();
+}*/
+
+void HMI_O9000Tune() {
+  updateOctoData = false;
+  ENCODER_DiffState encoder_diffState = get_encoder_state();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+
+  if (encoder_diffState == ENCODER_DIFF_CW) {
+    if (select_tune.inc(1 + TUNE_CASE_TOTAL)) {
+      if (select_tune.now > OctoMROWS && select_tune.now > octo_index_tune) {
+        octo_index_tune = select_tune.now;
+        
+        Scroll_Menu_Octo(DWIN_SCROLL_UP);
+        //DWIN_Draw_Rectangle(1, Color_Bg_Black, 180, 50, 238, OCTO_MBASE(0 + 1) - 12); // Clear the last line
+        
+        Octo_Draw_Menu_Icon(OctoMROWS, ICON_FanSpeed);
+
+        #if HAS_ZOFFSET_ITEM
+          if (octo_index_tune == TUNE_CASE_FAN){
+            DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
+            Octo_Item_Tune_Fan(OctoMROWS);
+          }
+            
+          if (octo_index_tune == TUNE_CASE_ZOFF){
+            DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
+            Octo_Item_Tune_Zoffset(OctoMROWS);
+          }
+        #endif
+      } else {
+        Move_Highlight_Octo(1, select_tune.now + OctoMROWS - octo_index_tune);
+      }
+    }
+  } else if (encoder_diffState == ENCODER_DIFF_CCW) {
+    if (select_tune.dec()) {
+      if (select_tune.now < octo_index_tune - OctoMROWS) {
+        octo_index_tune--;
+        Scroll_Menu_Octo(DWIN_SCROLL_DOWN);
+        //DWIN_Draw_Rectangle(1, Color_Bg_Black, 180, OCTO_MBASE(0) - 8, 238, OCTO_MBASE(0 + 1) - 12); // Clear the last line
+        if (octo_index_tune == OctoMROWS){
+          DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
+          Octo_Draw_Back_First();
+        }else if (octo_index_tune == 5){
+          DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
+          Octo_Item_Tune_Fan(0);
+        }else if (octo_index_tune == 6){
+          DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
+          Octo_Item_Tune_Zoffset(0);  
+        }
+      } else {
+        Move_Highlight_Octo(-1, select_tune.now + OctoMROWS - octo_index_tune);
+      }
+    }
+  } else if (encoder_diffState == ENCODER_DIFF_ENTER) {
+    switch (select_tune.now) {
+    case 0: { // Back
+      select_print.set(0);
+      DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
+    } break;
+    case TUNE_CASE_SPEED: // Print speed
+      checkkey = O9000PrintSpeed;
+      HMI_ValueStruct.print_speed = feedrate_percentage;
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_SPEED + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.print_speed);
+      EncoderRate.enabled = true;
+      break;
+    #if HAS_HOTEND
+    case TUNE_CASE_TEMP: // Nozzle temp
+      checkkey = O9000ETemp;
+      HMI_ValueStruct.E_Temp = thermalManager.degTargetHotend(0);
+      LIMIT(HMI_ValueStruct.E_Temp, HEATER_0_MINTEMP, thermalManager.hotend_max_target(0));
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_TEMP + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Temp);
+      EncoderRate.enabled = true;
+      break;
+
+    case TUNE_CASE_FLOW: // Flow rate
+      checkkey = O9000EFlow;
+      HMI_ValueStruct.E_Flow = planner.flow_percentage[0];
+      LIMIT(HMI_ValueStruct.E_Flow, FLOW_MINVAL, FLOW_MAXVAL);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_FLOW + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Flow);
+      EncoderRate.enabled = true;
+      break;
+    #endif
+    #if HAS_HEATED_BED
+    case TUNE_CASE_BED: // Bed temp
+      checkkey = O9000BedTemp;
+      HMI_ValueStruct.Bed_Temp = thermalManager.degTargetBed();
+      LIMIT(HMI_ValueStruct.Bed_Temp, BED_MINTEMP, BED_MAX_TARGET);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_BED + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
+      EncoderRate.enabled = true;
+      break;
+    #endif
+    #if HAS_FAN
+    case TUNE_CASE_FAN: // Fan speed
+      checkkey = O9000FanSpeed;
+      HMI_ValueStruct.Fan_speed = thermalManager.fan_speed[0];
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_FAN + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.Fan_speed);
+      EncoderRate.enabled = true;
+      break;
+    #endif
+    #if HAS_ZOFFSET_ITEM
+    case TUNE_CASE_ZOFF: // With offset
+      #if EITHER(HAS_BED_PROBE, BABYSTEPPING)
+      checkkey = O9000Homeoffset;
+      HMI_ValueStruct.offset_value = BABY_Z_VAR * 100;
+      DWIN_Draw_Signed_Float(font8x16, Select_Color, 2, 2, VALUERANGE_X - 14, OCTO_MBASE(TUNE_CASE_ZOFF + OctoMROWS - octo_index_tune), HMI_ValueStruct.offset_value);
+      EncoderRate.enabled = true;
+      #else
+      queue.inject_P(PSTR("G92 X0 Y0 Z0"));
+      HMI_AudioFeedback();
+      #endif
+      break;
+    #endif
+    default:
+      break;
+    }
+  }
+  DWIN_UpdateLCD();
 }
+
 
 /* Tune */
 void HMI_Tune()

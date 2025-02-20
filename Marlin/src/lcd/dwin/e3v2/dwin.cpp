@@ -8502,6 +8502,7 @@ void HMI_O9000()
 
 void HMI_O9000Tune() {
   updateOctoData = false;
+  HMI_flag.Refresh_bottom_flag = true;
   ENCODER_DiffState encoder_diffState = get_encoder_state();
   if (encoder_diffState == ENCODER_DIFF_NO)
     return;
@@ -8510,15 +8511,17 @@ void HMI_O9000Tune() {
     if (select_tune.inc(1 + TUNE_CASE_TOTAL)) {
       if (select_tune.now > OctoMROWS && select_tune.now > octo_index_tune) {
         octo_index_tune = select_tune.now;
+        HMI_flag.Refresh_bottom_flag = true;
         Scroll_Menu_Octo(DWIN_SCROLL_UP);
-        //DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, OCTO_MBASE(OctoMROWS) - 8, DWIN_WIDTH, OCTO_MBASE(OctoMROWS + 1) - 12);
+        
+        DWIN_Draw_Rectangle(1, Color_Bg_Black, 0,268,240,330); // Clear the last line
 
         uint8_t new_row = OctoMROWS;
-      switch (octo_index_tune) {
-        case TUNE_CASE_FAN:  Octo_Item_Tune_Fan(new_row); break;
-        case TUNE_CASE_BED:  Octo_Item_Tune_Bed(new_row); break;
-        case TUNE_CASE_ZOFF: Octo_Item_Tune_Zoffset(new_row); break;
-      }
+        switch (octo_index_tune) {
+          case TUNE_CASE_FAN:  Octo_Item_Tune_Fan(new_row); break;
+          case TUNE_CASE_BED:  Octo_Item_Tune_Bed(new_row); break;
+          case TUNE_CASE_ZOFF: Octo_Item_Tune_Zoffset(new_row); break;
+        }
       } else {
         Move_Highlight_Octo(1, select_tune.now + OctoMROWS - octo_index_tune);
       }
@@ -8527,8 +8530,10 @@ void HMI_O9000Tune() {
     if (select_tune.dec()) {
       if (select_tune.now < octo_index_tune - OctoMROWS) {
         octo_index_tune--;
+        HMI_flag.Refresh_bottom_flag = true;
         Scroll_Menu_Octo(DWIN_SCROLL_DOWN);
-        //DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, OCTO_MBASE(0) - 8, DWIN_WIDTH, OCTO_MBASE(1) - 12); // Clear the last line
+        
+       
 
         if (octo_index_tune == OctoMROWS) {
           Octo_Draw_Back_First();
@@ -8550,6 +8555,7 @@ void HMI_O9000Tune() {
       DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
     } break;
     case TUNE_CASE_SPEED: // Print speed
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000PrintSpeed;
       HMI_ValueStruct.print_speed = feedrate_percentage;
       DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_SPEED + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.print_speed);
@@ -8557,6 +8563,7 @@ void HMI_O9000Tune() {
       break;
     #if HAS_HOTEND
     case TUNE_CASE_TEMP: // Nozzle temp
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000ETemp;
       HMI_ValueStruct.E_Temp = thermalManager.degTargetHotend(0);
       LIMIT(HMI_ValueStruct.E_Temp, HEATER_0_MINTEMP, thermalManager.hotend_max_target(0));
@@ -8565,6 +8572,7 @@ void HMI_O9000Tune() {
       break;
 
     case TUNE_CASE_FLOW: // Flow rate
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000EFlow;
       HMI_ValueStruct.E_Flow = planner.flow_percentage[0];
       LIMIT(HMI_ValueStruct.E_Flow, FLOW_MINVAL, FLOW_MAXVAL);
@@ -8574,6 +8582,7 @@ void HMI_O9000Tune() {
     #endif
     #if HAS_HEATED_BED
     case TUNE_CASE_BED: // Bed temp
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000BedTemp;
       HMI_ValueStruct.Bed_Temp = thermalManager.degTargetBed();
       LIMIT(HMI_ValueStruct.Bed_Temp, BED_MINTEMP, BED_MAX_TARGET);
@@ -8583,6 +8592,7 @@ void HMI_O9000Tune() {
     #endif
     #if HAS_FAN
     case TUNE_CASE_FAN: // Fan speed
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000FanSpeed;
       HMI_ValueStruct.Fan_speed = thermalManager.fan_speed[0];
       DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_FAN + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.Fan_speed);
@@ -8592,6 +8602,7 @@ void HMI_O9000Tune() {
     #if HAS_ZOFFSET_ITEM
     case TUNE_CASE_ZOFF: // With offset
       #if EITHER(HAS_BED_PROBE, BABYSTEPPING)
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000Homeoffset;
       HMI_ValueStruct.offset_value = BABY_Z_VAR * 100;
       DWIN_Draw_Signed_Float(font8x16, Select_Color, 2, 2, VALUERANGE_X - 14, OCTO_MBASE(TUNE_CASE_ZOFF + OctoMROWS - octo_index_tune), HMI_ValueStruct.offset_value);

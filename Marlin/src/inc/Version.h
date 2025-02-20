@@ -26,7 +26,7 @@
  */
 #ifndef SHORT_BUILD_VERSION
   #if ENABLED(HIGH_SPEED_1)
-    #define SHORT_BUILD_VERSION "V1.0.9.7_8PIC6"
+    #define SHORT_BUILD_VERSION "V1.0.9.7_8PIC9"
   #else
     #define SHORT_BUILD_VERSION "Ender-3V3 SE_Ten_P1T14T" // GD32F303RET6 + Multilanguage 1.Chinese 2.English 3.German 4.Russian 5.French 6.Turkish 7.Spanish 8.Italian 9.Portuguese
   #endif  
@@ -68,7 +68,7 @@
  * The protocol for communication to the host. Protocol indicates communication
  * standards such as the use of ASCII, "echo:" and "error:" line prefixes, etc.
  * (Other behaviors are given by the firmware version and capabilities report.)
- */
+ **/
 #ifndef PROTOCOL_VERSION
   #define PROTOCOL_VERSION "1.0"
 #endif

@@ -53,6 +53,10 @@ extern millis_t lMs_lcd_delay; // 获取当前的时间
 extern bool LCD_TURNOFF_FLAG;  // 息屏标志位
 extern uint8_t record_lcd_flag;
 // Buzzer
+#if ENABLED(DWIN_LCD_BEEP)
+uint8_t toggle_LCDBeep;
+#endif
+
 void Encoder_tick() {
   #if PIN_EXISTS(BEEPER)
     WRITE(BEEPER_PIN, HIGH);
@@ -128,7 +132,12 @@ ENCODER_DiffState Encoder_ReceiveAnalyze() {
       if (ELAPSED(now, next_click_update_ms))
       {
         next_click_update_ms = millis() + 300;
-        Encoder_tick();
+
+      #if ENABLED(DWIN_LCD_BEEP)
+        if(toggle_LCDBeep == 1)
+          Encoder_tick();
+      #endif  
+
         #if PIN_EXISTS(LCD_LED)
           //LED_Action();
         #endif

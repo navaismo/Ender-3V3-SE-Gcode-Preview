@@ -126,6 +126,16 @@ void GcodeSuite::O9000()
       serial_connection_active = false;
       TERN_(DWIN_CREALITY_LCD, Goto_MainMenu());
     }
+    else if (strstr(my_string, "ONGPIC|") != NULL)
+    {
+      Show_Default_IMG = true;
+      
+    }
+    else if (strstr(my_string, "OFFGPIC|") != NULL)
+    {
+      Show_Default_IMG = false;
+      
+    }
     else
     {
       SERIAL_ECHOLN("Invalid Command Argument...");

@@ -28,7 +28,7 @@ void GcodeSuite::O9002() {
     if (parser.string_arg && parser.string_arg[0] != '\0') {
         // Handle START command to initialize/reset.
         if (strncmp(parser.string_arg, "START", 5) == 0) {
-
+            Show_Default_IMG = false;
             initializeImageMap();
             Clear_Title_Bar();
             Draw_OctoTitle("Receiving Thumbnail, wait...");

@@ -153,6 +153,7 @@ static uint8_t left_move_index = 0;
 bool qrShown = false;
 
 //initialize the image map
+bool Show_Default_IMG;
 uint16_t OctoImageMap[OctoIMAGE_MAP_SIZE];
 void initializeImageMap() {
     std::fill(OctoImageMap, OctoImageMap + OctoIMAGE_MAP_SIZE, 0xFFFF); // Fill with white
@@ -10640,7 +10641,11 @@ void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char 
   if(clear_UpperArea == 0){
     Clear_Octo_UpperArea();
   }
-
+  if(Show_Default_IMG){
+    Clear_Octo_UpperArea();
+    DC_Show_defaut_imageOcto();
+  }
+  
   Clear_Octo_Area();
   Draw_Mid_Status_Area(true);
   clear_UpperArea++;

@@ -648,6 +648,7 @@ extern enum DC_language current_language;
 #define OctoLogo_MAP_SIZE (OctoLogo_WIDTH * OctoLogo_HEIGHT)
 extern uint16_t OctoImageMap[OctoIMAGE_MAP_SIZE];
 extern uint16_t OctoLogoMap[OctoLogo_MAP_SIZE];
+extern bool Show_Default_IMG;
 
 
 extern volatile uint8_t checkkey;

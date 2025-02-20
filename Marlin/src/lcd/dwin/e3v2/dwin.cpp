@@ -2072,7 +2072,9 @@ void Add_Menu_Line_Octo() {
 
 void Scroll_Menu_Octo(const uint8_t dir) {
   HMI_flag.Refresh_bottom_flag = false;
-  DWIN_Frame_AreaMove(1, dir, MLINE, Color_Bg_Black, 11, TUNE_MENU_START_Y, DWIN_WIDTH - 1, 320 - 1); // Pan interface
+  DWIN_Frame_AreaMove(1, dir, MLINE, Color_Bg_Black, 11, TUNE_MENU_START_Y +30, DWIN_WIDTH - 1, 320 - 1); // Pan interface
+  // Ensure the header stays in place
+  DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
   switch (dir) {
     case DWIN_SCROLL_DOWN:
       Move_Highlight_Octo(-1, 0);
@@ -8511,13 +8513,12 @@ void HMI_O9000Tune() {
         Scroll_Menu_Octo(DWIN_SCROLL_UP);
         //DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, OCTO_MBASE(OctoMROWS) - 8, DWIN_WIDTH, OCTO_MBASE(OctoMROWS + 1) - 12);
 
-        if (octo_index_tune == TUNE_CASE_FAN) {
-          Octo_Item_Tune_Fan(OctoMROWS);
-        } else if(octo_index_tune == TUNE_CASE_BED) {
-          Octo_Item_Tune_Bed(OctoMROWS);
-        } else if (octo_index_tune == TUNE_CASE_ZOFF) {
-          Octo_Item_Tune_Zoffset(OctoMROWS);
-        }
+        uint8_t new_row = OctoMROWS;
+      switch (octo_index_tune) {
+        case TUNE_CASE_FAN:  Octo_Item_Tune_Fan(new_row); break;
+        case TUNE_CASE_BED:  Octo_Item_Tune_Bed(new_row); break;
+        case TUNE_CASE_ZOFF: Octo_Item_Tune_Zoffset(new_row); break;
+      }
       } else {
         Move_Highlight_Octo(1, select_tune.now + OctoMROWS - octo_index_tune);
       }
@@ -8532,11 +8533,11 @@ void HMI_O9000Tune() {
         if (octo_index_tune == OctoMROWS) {
           Octo_Draw_Back_First();
         }else if(octo_index_tune == 4) {
-          Octo_Item_Tune_Bed(0);
+          Octo_Item_Tune_Speed(0);
         } else if (octo_index_tune == 5) {
-          Octo_Item_Tune_Fan(0);
+          Octo_Item_Tune_Temp(0);
         } else if (octo_index_tune == 6) {
-          Octo_Item_Tune_Zoffset(0);
+          Octo_Item_Tune_Flow(0);
         }
       } else {
         Move_Highlight_Octo(-1, select_tune.now + OctoMROWS - octo_index_tune);

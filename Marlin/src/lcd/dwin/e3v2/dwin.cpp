@@ -2045,7 +2045,7 @@ void Draw_Tune_Menu()
 
 constexpr uint16_t TUNE_MENU_START_X = 0;
 constexpr uint16_t TUNE_MENU_START_Y = 123;
-constexpr uint16_t OctoMROWS = 4;
+constexpr uint16_t OctoMROWS = 3;
 uint8_t octo_index_tune = OctoMROWS,
         octo_index_prepare = OctoMROWS,
         octo_index_temp = OctoMROWS;
@@ -2059,7 +2059,6 @@ void Octo_Draw_Menu_Cursor(const uint8_t line) {
 void Erase_Menu_Cursor_Octo(const uint8_t line) {
   DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, OCTO_MBASE(line) - 8, 10, OCTO_MBASE(line + 1) - 12);
 }
-
 
 void Move_Highlight_Octo(const int16_t from, const uint16_t newline) {
   Erase_Menu_Cursor_Octo(newline - from);
@@ -2083,7 +2082,6 @@ void Scroll_Menu_Octo(const uint8_t dir) {
       break;
   }
 }
-
 
 void Octo_Draw_Menu_Icon(const uint8_t line, const uint8_t icon) {
   DWIN_ICON_Not_Filter_Show(ICON, icon, 20, OCTO_MBASE(line));
@@ -2171,49 +2169,48 @@ void Octo_Item_Tune_Zoffset(const uint8_t row) {
 
 
 
-void Draw_OctoTune_Menu()
-{
+void Draw_OctoTune_Menu() {
   Clear_Octo_Area();
   HMI_flag.Refresh_bottom_flag = true;
   const int16_t Oscroll = OctoMROWS - octo_index_tune; // Scrolled-up lines
-#define OTSCROL(L) (Oscroll + (L))
-#define OTVISI(L) WITHIN(OTSCROL(L), 0, OctoMROWS)
+  #define OTSCROL(L) (Oscroll + (L))
+  #define OTVISI(L) WITHIN(OTSCROL(L), 0, OctoMROWS)
 
-if (HMI_flag.language < Language_Max) {
-  DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y); // Title
-} else {
-  ;
-}
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y); // Title
+  } else {
+    ;
+  }
 
-if (OTVISI(0))
-  Octo_Draw_Back_First(select_tune.now == 0);  // < Back
-if (OTVISI(TUNE_CASE_SPEED))
-  Octo_Item_Tune_Speed(OTSCROL(TUNE_CASE_SPEED));  // Speed
- 
-#if HAS_HOTEND
-  if (OTVISI(TUNE_CASE_TEMP))
-    Octo_Item_Tune_Temp(OTSCROL(TUNE_CASE_TEMP));  // Hotend Temp
+  if (OTVISI(0))
+    Octo_Draw_Back_First(select_tune.now == 0);  // < Back
+  if (OTVISI(TUNE_CASE_SPEED))
+    Octo_Item_Tune_Speed(OTSCROL(TUNE_CASE_SPEED));  // Speed
 
-  if (OTVISI(TUNE_CASE_FLOW))
-    Octo_Item_Tune_Flow(OTSCROL(TUNE_CASE_FLOW));  // Flow
-#endif
+  #if HAS_HOTEND
+    if (OTVISI(TUNE_CASE_TEMP))
+      Octo_Item_Tune_Temp(OTSCROL(TUNE_CASE_TEMP));  // Hotend Temp
 
-#if HAS_HEATED_BED
-  if (OTVISI(TUNE_CASE_BED))
-    Octo_Item_Tune_Bed(OTSCROL(TUNE_CASE_BED));  // Bed Temp
-#endif
+    if (OTVISI(TUNE_CASE_FLOW))
+      Octo_Item_Tune_Flow(OTSCROL(TUNE_CASE_FLOW));  // Flow
+  #endif
 
-#if HAS_FAN 
-  if (OTVISI(TUNE_CASE_FAN))
-    Octo_Item_Tune_Fan(OTSCROL(TUNE_CASE_FAN));  // Fan Speed
-#endif
-#if HAS_ZOFFSET_ITEM
-  if (OTVISI(TUNE_CASE_ZOFF))
-    Octo_Item_Tune_Zoffset(OTSCROL(TUNE_CASE_ZOFF));  // Z offset
-#endif
+  #if HAS_HEATED_BED
+    if (OTVISI(TUNE_CASE_BED))
+      Octo_Item_Tune_Bed(OTSCROL(TUNE_CASE_BED));  // Bed Temp
+  #endif
 
-if (select_tune.now)
-  Octo_Draw_Menu_Cursor(OTSCROL(select_tune.now));
+  #if HAS_FAN 
+    if (OTVISI(TUNE_CASE_FAN))
+      Octo_Item_Tune_Fan(OTSCROL(TUNE_CASE_FAN));  // Fan Speed
+  #endif
+  #if HAS_ZOFFSET_ITEM
+    if (OTVISI(TUNE_CASE_ZOFF))
+      Octo_Item_Tune_Zoffset(OTSCROL(TUNE_CASE_ZOFF));  // Z offset
+  #endif
+
+  if (select_tune.now)
+    Octo_Draw_Menu_Cursor(OTSCROL(select_tune.now));
 }
 
 void draw_qrcode(const uint16_t topLeftX, const uint16_t topLeftY, const uint8_t moduleSize, const char *qrcode_data) {
@@ -8511,23 +8508,16 @@ void HMI_O9000Tune() {
     if (select_tune.inc(1 + TUNE_CASE_TOTAL)) {
       if (select_tune.now > OctoMROWS && select_tune.now > octo_index_tune) {
         octo_index_tune = select_tune.now;
-        
         Scroll_Menu_Octo(DWIN_SCROLL_UP);
-        //DWIN_Draw_Rectangle(1, Color_Bg_Black, 180, 50, 238, OCTO_MBASE(0 + 1) - 12); // Clear the last line
-        
-        Octo_Draw_Menu_Icon(OctoMROWS, ICON_FanSpeed);
+        //DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, OCTO_MBASE(OctoMROWS) - 8, DWIN_WIDTH, OCTO_MBASE(OctoMROWS + 1) - 12);
 
-        #if HAS_ZOFFSET_ITEM
-          if (octo_index_tune == TUNE_CASE_FAN){
-            DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
-            Octo_Item_Tune_Fan(OctoMROWS);
-          }
-            
-          if (octo_index_tune == TUNE_CASE_ZOFF){
-            DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
-            Octo_Item_Tune_Zoffset(OctoMROWS);
-          }
-        #endif
+        if (octo_index_tune == TUNE_CASE_FAN) {
+          Octo_Item_Tune_Fan(OctoMROWS);
+        } else if(octo_index_tune == TUNE_CASE_BED) {
+          Octo_Item_Tune_Bed(OctoMROWS);
+        } else if (octo_index_tune == TUNE_CASE_ZOFF) {
+          Octo_Item_Tune_Zoffset(OctoMROWS);
+        }
       } else {
         Move_Highlight_Octo(1, select_tune.now + OctoMROWS - octo_index_tune);
       }
@@ -8537,16 +8527,16 @@ void HMI_O9000Tune() {
       if (select_tune.now < octo_index_tune - OctoMROWS) {
         octo_index_tune--;
         Scroll_Menu_Octo(DWIN_SCROLL_DOWN);
-        //DWIN_Draw_Rectangle(1, Color_Bg_Black, 180, OCTO_MBASE(0) - 8, 238, OCTO_MBASE(0 + 1) - 12); // Clear the last line
-        if (octo_index_tune == OctoMROWS){
-          DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
+        //DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, OCTO_MBASE(0) - 8, DWIN_WIDTH, OCTO_MBASE(1) - 12); // Clear the last line
+
+        if (octo_index_tune == OctoMROWS) {
           Octo_Draw_Back_First();
-        }else if (octo_index_tune == 5){
-          DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
+        }else if(octo_index_tune == 4) {
+          Octo_Item_Tune_Bed(0);
+        } else if (octo_index_tune == 5) {
           Octo_Item_Tune_Fan(0);
-        }else if (octo_index_tune == 6){
-          DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
-          Octo_Item_Tune_Zoffset(0);  
+        } else if (octo_index_tune == 6) {
+          Octo_Item_Tune_Zoffset(0);
         }
       } else {
         Move_Highlight_Octo(-1, select_tune.now + OctoMROWS - octo_index_tune);

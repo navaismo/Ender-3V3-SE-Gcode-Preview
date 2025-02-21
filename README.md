@@ -525,5 +525,5 @@ If is a direct print, is recommended to preheat the filament so the transmission
 This is a personal decision, I like a lot to see how the Creality Man dissapear slowly, it brings me peace.
 
 <br>
-<p style="color: orange;"> <b>8.</b> Sometimes in the Tune Menu appears the Nozzle and Bed Iconsm, Why?</p>
+<p style="color: orange;"> <b>8.</b> Sometimes in the Tune Menu appears the Nozzle and Bed Icons, Why?</p>
 This is beacuse the encoder/Knob is moved too fast and enter in an unknow state that by default try to render the lower info area. If you move it slowly this will no appear.

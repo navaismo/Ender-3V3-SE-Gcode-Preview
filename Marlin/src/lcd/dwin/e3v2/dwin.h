@@ -637,6 +637,7 @@ extern enum DC_language current_language;
 #define Button_Select_Color 0xFFFF  // Selected color
 #define All_Black         0x0000  // Selected color
 
+
 extern volatile uint8_t checkkey;
 extern float zprobe_zoffset;
 extern char print_filename[16];
@@ -867,6 +868,10 @@ void octoUpdateScroll();
 void clearOctoScrollVars();
 // Set Values for updates
 void DWIN_SetPrintingDetails(const char *eta, const char *progress, const char *current_layer);
+
+// Update print time
+void DWIN_OctoSetPrintTime(char* print_time);
+
 
 
 void DWIN_CompletedHoming();

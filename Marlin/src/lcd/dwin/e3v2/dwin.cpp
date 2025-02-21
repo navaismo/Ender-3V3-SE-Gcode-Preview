@@ -1364,7 +1364,8 @@ inline bool Apply_Encoder(const ENCODER_DiffState &encoder_diffState, auto &valr
 #define PREPARE_CASE_ABS (PREPARE_CASE_PLA + ENABLED(HAS_HOTEND))
 #define PREPARE_CASE_COOL (PREPARE_CASE_ABS + EITHER(HAS_HOTEND, HAS_HEATED_BED))
 #define PREPARE_CASE_LANG (PREPARE_CASE_COOL + 1)
-#define PREPARE_CASE_TOTAL PREPARE_CASE_LANG
+#define PREPARE_CASE_LCDSOUND (PREPARE_CASE_LANG + 1)
+#define PREPARE_CASE_TOTAL PREPARE_CASE_LCDSOUND
 
 #define CONTROL_CASE_TEMP 1
 #define CONTROL_CASE_MOVE (CONTROL_CASE_TEMP + 1)
@@ -1694,6 +1695,23 @@ void Item_Prepare_Lang(const uint8_t row)
   Draw_Menu_Line(row, ICON_Language);
 }
 
+
+
+void Item_Prepare_LCDSound(const uint8_t row)
+{
+  if (HMI_flag.language < Language_Max)
+  {
+
+    DWIN_Draw_Label(MBASE(row)+2, F("Toggle LCD Beeper"));
+    // DWIN_Frame_AreaCopy(1,   1, 104,  56, 117, LBLX, MBASE(row));
+  }
+  
+  Draw_Menu_Icon(row, ICON_Contact);
+  Draw_Menu_Line(row, ICON_Contact);
+}
+
+
+
 void Draw_Prepare_Menu()
 {
   Clear_Main_Window();
@@ -1750,6 +1768,11 @@ void Draw_Prepare_Menu()
 #endif
   if (PVISI(PREPARE_CASE_LANG))
     Item_Prepare_Lang(PSCROL(PREPARE_CASE_LANG)); // Language CN/EN
+
+  
+  if (PVISI(PREPARE_CASE_LCDSOUND))
+    Item_Prepare_LCDSound(PSCROL(PREPARE_CASE_LCDSOUND)); // Disable LCD Beeper  
+  
 
   if (select_prepare.now)
     Draw_Menu_Cursor(PSCROL(select_prepare.now));
@@ -6353,6 +6376,9 @@ void HMI_Prepare()
 #endif
         if (index_prepare == PREPARE_CASE_LANG)
           Item_Prepare_Lang(MROWS);
+
+        if(index_prepare == PREPARE_CASE_LCDSOUND)
+          Item_Prepare_LCDSound(MROWS);  
       }
       else
       {
@@ -6385,6 +6411,8 @@ void HMI_Prepare()
           Item_Prepare_Offset(0);
         else if (index_prepare == 10)
           Item_Prepare_instork(0);
+        else if (index_prepare == 11)
+          Item_Prepare_outstork(0);   
       }
       else
       {
@@ -6516,6 +6544,13 @@ void HMI_Prepare()
       Draw_Select_language();
       checkkey = Selectlanguage;
       break;
+
+#if ENABLED(DWIN_LCD_BEEP)
+    case PREPARE_CASE_LCDSOUND: // Toggle LCD sound
+      toggle_LCDBeep = !toggle_LCDBeep;
+      break;  
+#endif
+
     default:
       break;
     }

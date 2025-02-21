@@ -1433,6 +1433,10 @@
   // Enable this option to scroll long filenames in the SD card menu
   #define SCROLL_LONG_FILENAMES       // Creality Active scroll of large filenames
 
+  // Define a variable to store if LCD beep is enabled
+  #define DWIN_LCD_BEEP
+
+
   // Leave the heaters on after Stop Print (not recommended!)
   //#define SD_ABORT_NO_COOLDOWN
 

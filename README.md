@@ -358,7 +358,7 @@ _M177 has a basic implementation and I'm not planning on improve M117 messages_
 <br>
 
 ### * Configure The GCODE Preview transmission.
-If you installed the firmware from the [Repo that Enable the Gcode Preview Using Octoprint](), enble the slicer so the plugin can send it to the LCD.
+If you installed the firmware from the [Repo that Enable the Gcode Preview Using Octoprint](https://github.com/navaismo/Ender-3V3-SE-Gcode-Preview.git), enble the slicer so the plugin can send it to the LCD.
 
 > [!IMPORTANT]
 >

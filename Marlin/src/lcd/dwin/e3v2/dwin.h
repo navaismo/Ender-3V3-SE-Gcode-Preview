@@ -103,6 +103,8 @@ enum processID : uint8_t {
   InputShaping_XZeta,
   InputShaping_YFreq,
   InputShaping_YZeta,
+  LinearAdv,
+  LinAdv_KFactor,
   HomeOff,
   HomeOffX,
   HomeOffY,
@@ -671,6 +673,7 @@ typedef struct
   float Move_Y_scaled     = 0;
   float Move_Z_scaled     = 0;
   float InputShaping_scaled = 0;
+  float LinearAdv_KFactor= 0;
   uint8_t Curve_index = 0;
   uint16_t Auto_PID_Temp  = 0;
   uint16_t Auto_PID_Value[3] = {0, 100, 260}; // 1:热床温度; 2 喷嘴温度

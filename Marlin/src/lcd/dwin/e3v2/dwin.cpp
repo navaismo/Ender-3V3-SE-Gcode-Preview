@@ -205,7 +205,7 @@ typedef struct
   char longfilename[LONG_FILENAME_LENGTH];
 } PrintFile_InfoTypeDef;
 
-select_t select_page{0}, select_file{0}, select_print{0}, select_prepare{0}, select_control{0}, select_axis{0}, select_temp{0}, select_motion{0}, select_tune{0}, select_advset{0}, select_PLA{0}, select_ABS{0}, select_speed{0}, select_acc{0}, select_jerk{0}, select_step{0}, select_input_shaping{0}, select_item{0}, select_language{0}, select_hm_set_pid{0}, select_set_pid{0}, select_level{0}, select_show_pic{0};
+select_t select_page{0}, select_file{0}, select_print{0}, select_prepare{0}, select_control{0}, select_axis{0}, select_temp{0}, select_motion{0}, select_tune{0}, select_advset{0}, select_PLA{0}, select_ABS{0}, select_speed{0}, select_acc{0}, select_jerk{0}, select_step{0}, select_input_shaping{0},select_linear_adv{0}, select_item{0}, select_language{0}, select_hm_set_pid{0}, select_set_pid{0}, select_level{0}, select_show_pic{0};
 
 uint8_t index_file = MROWS,
         index_prepare = MROWS,
@@ -1355,12 +1355,15 @@ inline bool Apply_Encoder(const ENCODER_DiffState &encoder_diffState, auto &valr
 #define MOTION_CASE_JERK (MOTION_CASE_ACCEL + ENABLED(HAS_CLASSIC_JERK))
 #define MOTION_CASE_STEPS (MOTION_CASE_JERK + 1)
 #define MOTION_CASE_INPUT_SHAPING (MOTION_CASE_STEPS + 1)
-#define MOTION_CASE_TOTAL MOTION_CASE_INPUT_SHAPING
+#define MOTION_CASE_LINADV (MOTION_CASE_INPUT_SHAPING + 1)
+#define MOTION_CASE_TOTAL MOTION_CASE_LINADV
 
 #define INPUT_SHAPING_CASE_XFREQ 1
 #define INPUT_SHAPING_CASE_YFREQ (INPUT_SHAPING_CASE_XFREQ + 1)
 #define INPUT_SHAPING_CASE_XZETA (INPUT_SHAPING_CASE_YFREQ + 1)
 #define INPUT_SHAPING_CASE_YZETA (INPUT_SHAPING_CASE_XZETA + 1)
+
+#define LINEAR_ADV_KFACTOR 1
 
 #define PREPARE_CASE_MOVE 1
 #define PREPARE_CASE_DISA 2
@@ -2320,6 +2323,17 @@ void draw_input_shaping(const uint16_t line)
   // There's no graphical asset for this label, so we just write it as string
   DWIN_Draw_Label(line, GET_TEXT_F(MSG_INPUT_SHAPING));
 }
+
+
+void draw_lin_adv(const uint16_t line)
+{
+  // There's no graphical asset for this label, so we just write it as string
+  DWIN_Draw_Label(line, F("Linear Advance"));
+  Draw_Menu_Line(line - 2, ICON_Motion);
+}
+
+
+
 void say_x(const uint16_t inset, const uint16_t line)
 {
   DWIN_Frame_AreaCopy(1, 95, 104, 102, 114, LBLX + inset, line); // "x"
@@ -2360,6 +2374,7 @@ void Draw_Motion_Menu()
     // DWIN_Frame_AreaCopy(1, 153, 148, 194, 161, LBLX, MBASE(MOTION_CASE_STEPS));         //Flow ratio
     DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Step, 42, MBASE(MOTION_CASE_STEPS) + JPN_OFFSET);
     draw_input_shaping(MBASE(MOTION_CASE_INPUT_SHAPING) + 2); // "Input shaping"
+    draw_lin_adv(MBASE(MOTION_CASE_LINADV) + 2); // "Linear Advance"
   }
   else
   {
@@ -2386,6 +2401,7 @@ void Draw_Motion_Menu()
 #endif // HAS_CLASSIC_JERK
     draw_steps_per_mm(MBASE(MOTION_CASE_STEPS)); // "steps per mm"
     draw_input_shaping(MBASE(MOTION_CASE_INPUT_SHAPING) + 2); // "Input shaping"
+    draw_lin_adv(MBASE(MOTION_CASE_LINADV) + 2); // "Linear Advance"
 #endif // USE_STRING_TITLES
   }
 
@@ -2407,6 +2423,8 @@ void Draw_Motion_Menu()
   _MOTION_ICON(MOTION_CASE_STEPS);
   Draw_More_Icon(i);
   Draw_Menu_Line(++i, ICON_Setspeed);
+  Draw_More_Icon(i);
+  Draw_Menu_Line(++i, ICON_Motion);
   Draw_More_Icon(i);
   Draw_Menu_Icon(MOTION_CASE_STEPS, ICON_Step);
 }
@@ -4336,6 +4354,39 @@ void HMI_InputShaping_Values()
 
   DWIN_UpdateLCD();
 }
+
+
+///
+void HMI_LinearAdv_KFactor()
+{
+  ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+  
+  if (Apply_Encoder(encoder_diffState, HMI_ValueStruct.LinearAdv_KFactor)) {
+    checkkey = LinearAdv;
+    EncoderRate.enabled = false;   
+    LIMIT(HMI_ValueStruct.LinearAdv_KFactor, 0.0f, 500.0f); 
+    planner.extruder_advance_K[0] = HMI_ValueStruct.LinearAdv_KFactor / 100.0f;
+    //SERIAL_ECHOLNPAIR("Saved Value: ", planner.extruder_advance_K[0]);
+
+    // Display the saved value (multiplied by 100 for correct rendering)
+    DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 2, 2, VALUERANGE_X, MBASE(1) + 3, _MAX(HMI_ValueStruct.LinearAdv_KFactor, 0.0));
+    return;
+  }
+  
+  //SERIAL_ECHOLNPAIR("HMI_LinAdv_KFactor Editing: ", HMI_ValueStruct.LinearAdv_KFactor);
+  // Ensure the value is within limits **before** displaying
+  LIMIT(HMI_ValueStruct.LinearAdv_KFactor, 0.0f, 500.0f);  // Assuming the real range
+
+  // Scale for display (float to int conversion)
+  DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Select_Color, 2, 2, VALUERANGE_X, MBASE(1) + 3, _MAX(HMI_ValueStruct.LinearAdv_KFactor, 0.0));
+    
+  
+
+}
+////
+
 
 void HMI_StepXYZE()
 {
@@ -7902,6 +7953,20 @@ void Draw_InputShaping_Menu()
 #endif
 }
 
+void Draw_LinearAdv_Menu()
+{
+  Clear_Main_Window();
+  HMI_flag.Refresh_bottom_flag = true; // Flag refresh bottom parameter
+
+  Draw_Title(F("Linear Advance"));
+  DWIN_Draw_Label(MBASE(1), F("K-Factor"));
+  
+  Draw_Back_First();
+  Draw_Menu_Line(1, ICON_Motion);
+  DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 2, 2, VALUERANGE_X, MBASE(1) + 3, planner.extruder_advance_K[0] * 100);
+}
+
+
 /* Motion */
 void HMI_Motion()
 {
@@ -7957,6 +8022,11 @@ void HMI_Motion()
       select_input_shaping.reset();
       Draw_InputShaping_Menu();
       break;
+    case MOTION_CASE_LINADV: // Linear Advance
+      checkkey = LinearAdv;
+      select_linear_adv.reset();
+      Draw_LinearAdv_Menu();
+      break;     
     default:
       break;
     }
@@ -9056,6 +9126,52 @@ void HMI_InputShaping()
   DWIN_UpdateLCD();
 }
 
+////
+/* Linear Advance */
+void HMI_LinearAdv()
+{
+  ENCODER_DiffState encoder_diffState = get_encoder_state();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+
+  // Avoid flicker by updating only the previous menu
+  if (encoder_diffState == ENCODER_DIFF_CW)
+  {
+    if (select_linear_adv.inc(1 + 3 + ENABLED(HAS_HOTEND)))
+      Move_Highlight(1, select_linear_adv.now);
+  }
+  else if (encoder_diffState == ENCODER_DIFF_CCW)
+  {
+    if (select_linear_adv.dec())
+      Move_Highlight(-1, select_linear_adv.now);
+  }
+  else if (encoder_diffState == ENCODER_DIFF_ENTER)
+  {
+    switch (select_linear_adv.now)
+    {
+    case 0: // Back
+      checkkey = Motion;
+      select_motion.now = MOTION_CASE_LINADV;
+      Draw_Motion_Menu();
+      break;
+    case LINEAR_ADV_KFACTOR:
+      checkkey = LinAdv_KFactor;
+      SERIAL_ECHOLNPAIR("showMenu Val: ", planner.extruder_advance_K[0]);
+      DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Select_Color, 2, 2, VALUERANGE_X, MBASE(1) + 3, (planner.extruder_advance_K[0] * 100));
+      EncoderRate.enabled = true;
+      break;
+    
+    }
+  }
+  DWIN_UpdateLCD();
+}
+
+////
+
+
+
+
+
 #if HAS_CLASSIC_JERK
 /* Max Jerk */
 void HMI_MaxJerk()
@@ -10145,6 +10261,8 @@ void DWIN_HandleScreen()
   case InputShaping:
     HMI_InputShaping();
     break;
+  case LinearAdv:
+    HMI_LinearAdv();  
   case Step:
     HMI_Step();
     break;
@@ -10203,6 +10321,9 @@ void DWIN_HandleScreen()
   case InputShaping_YZeta:
     HMI_InputShaping_Values();
     break;
+  case LinAdv_KFactor:
+    HMI_LinearAdv_KFactor();
+    break;    
   case Step_value:
     HMI_StepXYZE();
     break;

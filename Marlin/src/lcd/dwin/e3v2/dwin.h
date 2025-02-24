@@ -640,16 +640,9 @@ extern enum DC_language current_language;
 #define All_Black         0x0000  // Selected color
 
 //octo imagemap
-// Declare the ImageMap array
 #define OctoIMAGE_WIDTH 96
-#define OctoIMAGE_HEIGHT 96
-#define OctoLogo_WIDTH 240
-#define OctoLogo_HEIGHT 26
-// Define the size of the ImageMap array
-#define OctoIMAGE_MAP_SIZE (OctoIMAGE_WIDTH * OctoIMAGE_HEIGHT)
-#define OctoLogo_MAP_SIZE (OctoLogo_WIDTH * OctoLogo_HEIGHT)
-extern uint16_t OctoImageMap[OctoIMAGE_MAP_SIZE];
-extern uint16_t OctoLogoMap[OctoLogo_MAP_SIZE];
+// Buffer to hold one line of the image
+extern uint16_t OctoImageLine[OctoIMAGE_WIDTH];
 extern bool Show_Default_IMG;
 
 
@@ -885,9 +878,9 @@ void clearOctoScrollVars();
 // Set Values for updates
 void DWIN_SetPrintingDetails(const char *eta, const char *progress, const char *current_layer);
 // Render Image Map
-void DWIN_RenderOctoImageMap();
-void DWIN_RenderOctoLogo();
+void DWIN_RenderOctoTitle();
 void initializeImageMap();
+void DWIN_RenderOctoLine(uint16_t y);
 // Update print time
 void DWIN_OctoSetPrintTime(char* print_time);
 

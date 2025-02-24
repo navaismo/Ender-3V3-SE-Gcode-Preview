@@ -6,66 +6,71 @@
 #include "../../lcd/marlinui.h"
 #include "../../lcd/dwin/e3v2/lcd_rts.h"
 
-/*void sendImageMap() {
-    SERIAL_ECHOLN("Sending ImageMap array:");
-    for (int i = 0; i < OctoIMAGE_MAP_SIZE; i++) {
-        SERIAL_ECHOLNPAIR("Pixel ", i);
-        SERIAL_ECHOLNPAIR(": ", OctoImageMap[i]);
-    }
-}*/
 
-/**
- * O9002: Fill Marlin Variable ImageMap with incoming data
- *
- * Params:
- *   O9002|data1,data2,data3...data20
- *   O9002|END
- */
 
-static int mypicBufIndex = 0; 
+
+
+static uint16_t current_line = 0;  // Track the current line
+static uint16_t received_pixels = 0; // Track received pixels for the line
+
+
 void GcodeSuite::O9002() {
-    // Ensure parser.string_arg is not null.
+    
     if (parser.string_arg && parser.string_arg[0] != '\0') {
-        // Handle START command to initialize/reset.
+        // START: Initialize the image reception
         if (strncmp(parser.string_arg, "START", 5) == 0) {
             Show_Default_IMG = false;
             initializeImageMap();
             Clear_Title_Bar();
             Draw_OctoTitle("Receiving Thumbnail, wait...");
-            mypicBufIndex = 0;
-            SERIAL_ECHOLN("O9002 START: Image map cleared.");
+            current_line = 0;
+            received_pixels = 0;
+            SERIAL_ECHOLN("O9002 START: Ready to receive lines.");
             return;
         }
 
-        // Handle END command to finalize.
+        // END: Finalize the image transmission
         if (strcmp(parser.string_arg, "END") == 0) {
-            SERIAL_ECHOLN("O9002 END: Image map complete.");
-            //sendImageMap();          // For example, echo the image data.
-            DWIN_RenderOctoImageMap();// Trigger display update.
+            SERIAL_ECHOLN("O9002 thumbnail-rendered");
+            DWIN_RenderOctoTitle();
             return;
         }
 
-        // Handle CHUNK command.
+        // CHUNK: Receive a portion of a line
         if (strncmp(parser.string_arg, "CHUNK", 5) == 0) {
-            // Skip the "CHUNK" part.
             char *arg = parser.string_arg + 5;
             while (*arg && isspace(*arg)) arg++;
-            // Tokenize using '|' to separate index and pixel data.
-            char *token = strtok(arg, "|");
+
+            // Tokenize the string for chunk parsing
+            char *token = strtok(arg, ",");
             if (token != nullptr) {
-                int chunk_start = atoi(token);
+                uint16_t line_number = atoi(token);
+
+                // Tokenize for pixel offset
                 token = strtok(nullptr, "|");
                 if (token != nullptr) {
-                    // Tokenize the pixel data by commas.
-                    char *pixel_token = strtok(token, ",");
-                    int local_index = chunk_start;
-                    while (pixel_token != nullptr && local_index < OctoIMAGE_MAP_SIZE) {
-                        uint16_t pixel_value = static_cast<uint16_t>(atoi(pixel_token));
-                        //SERIAL_ECHOLNPAIR("Val: ", pixel_value);
-                        OctoImageMap[local_index] = pixel_value;
-                        //SERIAL_ECHOLNPAIR("IMGidxVal: ", OctoImageMap[local_index]);
-                        local_index++;
-                        pixel_token = strtok(nullptr, ",");
+                    uint16_t pixel_offset = atoi(token);
+
+                    // Start parsing the pixel data
+                    token = strtok(nullptr, ",");
+                    while (token != nullptr && pixel_offset < OctoIMAGE_WIDTH) {
+                        // Ensure proper color value assignment
+                        OctoImageLine[pixel_offset] = static_cast<uint16_t>(atoi(token));
+                        received_pixels++;
+                        pixel_offset++;
+
+                        token = strtok(nullptr, ",");
+                    }
+
+                    // Debugging output for checking chunk data
+                    // SERIAL_ECHOLNPAIR("O9002 CHUNK: Received line ", line_number);
+                    // SERIAL_ECHOLNPAIR("Current received_pixels: ", received_pixels);
+
+                    // Check if entire line has been received
+                    if (received_pixels >= OctoIMAGE_WIDTH) {
+                        // Call render function for the line
+                        DWIN_RenderOctoLine(line_number);
+                        received_pixels = 0; // Reset for next line
                     }
                 }
             }

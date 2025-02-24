@@ -154,11 +154,14 @@ bool qrShown = false;
 
 //initialize the image map
 bool Show_Default_IMG;
-uint16_t OctoImageMap[OctoIMAGE_MAP_SIZE];
-void initializeImageMap() {
-    std::fill(OctoImageMap, OctoImageMap + OctoIMAGE_MAP_SIZE, 0xFFFF); // Fill with white
-    std::fill(OctoLogoMap, OctoLogoMap + OctoLogo_MAP_SIZE, 0xFFFF); // Fill with white
-  }
+// uint16_t OctoImageMap[OctoIMAGE_MAP_SIZE];
+// In DWIN.cpp
+uint16_t OctoImageLine[OctoIMAGE_WIDTH];
+ void initializeImageMap() {
+  //clear the image map to black
+  memset(OctoImageLine, 0, sizeof(OctoImageLine));
+  //SERIAL_ECHOLN("OctoImageLine initialized to 0:");
+ }
 
 /* Value Init */
 HMI_value_t HMI_ValueStruct;
@@ -10939,88 +10942,34 @@ void OctoPopup_PauseOrStop()
 
 }
 
-
-
-void DWIN_RenderOctoImageMap() {
-  uint16_t x_start = 15;  // Starting X position
-  uint16_t y_start = 25; // Starting Y position
-  Clear_Title_Bar();
-  Draw_OctoTitle("Rendering Thumbnail, wait...");
-  SERIAL_ECHO_START();
-  SERIAL_ECHOLNPGM("busy: processing");
-  millis_t last_watchdog_refresh = millis();  // Store the last refresh time
-  millis_t last_keepalive = millis();  // Store the last keepalive time
-
-  // Render the image pixel by pixel
-  for (uint16_t y = 0; y < OctoIMAGE_HEIGHT && (y_start + y) < 320; y++) {
-    for (uint16_t x = 0; x < OctoIMAGE_WIDTH && (x_start + x) < 240; x++) {
-      uint16_t color = OctoImageMap[y * OctoIMAGE_WIDTH + x]; // Fixed indexing
-      // Draw a single pixel as a filled 1x1 rectangle
-      DWIN_Draw_Rectangle(1, color, x_start + x, y_start + y, x_start + x, y_start + y);
-      delay(7);
-      // // Refresh watchdog every 4000ms (4 seconds)
-       if (millis() - last_watchdog_refresh >= 1250) {
-         HAL_watchdog_refresh();
-         last_watchdog_refresh = millis();  // Reset timer
-       }      
-       // Send keepalive every 2000ms (2 seconds)
-       if(millis() - last_keepalive >= 2000){
-         SERIAL_ECHO_START();
-         SERIAL_ECHOLNPGM("busy: processing");
-         last_keepalive = millis();  // Reset timer
-       }
-    }
-    
-  }
+void DWIN_RenderOctoTitle(){
   Clear_Title_Bar();
   Draw_OctoTitle(vvfilename);
-  SERIAL_ECHO_START();
-  SERIAL_ECHOLNPGM("busy: processing done");
-  SERIAL_ECHOLN("O9002 thumbnail-rendered");
-  delay(5);
-  SERIAL_ECHO_START();
-  SERIAL_ECHOLNPGM("ok");
-
 }
 
-void DWIN_RenderOctoLogo() {
-  uint16_t x_start = 0;  // Starting X position
-  uint16_t y_start = 0; // Starting Y position
-  
-  SERIAL_ECHO_START();
-  SERIAL_ECHOLNPGM("busy: processing");
-  millis_t last_watchdog_refresh = millis();  // Store the last refresh time
-  millis_t last_keepalive = millis();  // Store the last keepalive time
+void DWIN_RenderOctoLine(uint16_t y) {
+  if (y >= 96) return;
 
-  // Render the image pixel by pixel
-  for (uint16_t y = 0; y < OctoLogo_HEIGHT && (y_start + y) < 320; y++) {
-    for (uint16_t x = 0; x < OctoLogo_WIDTH && (x_start + x) < 240; x++) {
-      uint16_t color = OctoImageMap[y * OctoLogo_WIDTH+ x]; // Fixed indexing
-      // Draw a single pixel as a filled 1x1 rectangle
+  const uint16_t x_start = 12;
+  const uint16_t y_start = 25;
+
+  //SERIAL_ECHOLNPAIR("O9002: Rendering Line ", y);
+
+  for (uint16_t x = 0; x < 96; x++) {
+      uint16_t color = OctoImageLine[x];
+
+      // Debug output
+      // SERIAL_ECHOPAIR("Pixel at (", x);
+      // SERIAL_ECHOPAIR(", ", y);
+      // SERIAL_ECHOLNPAIR(") Color: ", color);
+
+      // Draw the pixel
       DWIN_Draw_Rectangle(1, color, x_start + x, y_start + y, x_start + x, y_start + y);
-      delay(7);
-      // // Refresh watchdog every 4000ms (4 seconds)
-       if (millis() - last_watchdog_refresh >= 1250) {
-         HAL_watchdog_refresh();
-         last_watchdog_refresh = millis();  // Reset timer
-       }      
-       // Send keepalive every 2000ms (2 seconds)
-       if(millis() - last_keepalive >= 2000){
-         SERIAL_ECHO_START();
-         SERIAL_ECHOLNPGM("busy: processing");
-         last_keepalive = millis();  // Reset timer
-       }
-    }
-    
   }
-  
-  SERIAL_ECHO_START();
-  SERIAL_ECHOLNPGM("busy: processing done");
-  SERIAL_ECHOLN("O9002 thumbnail-rendered");
-  delay(5);
-  SERIAL_ECHO_START();
-  SERIAL_ECHOLNPGM("ok");
+
+  SERIAL_ECHOLNPAIR("O9002 ACK LINE ", y);
 }
+
 
 void DWIN_CompletedHoming()
 {

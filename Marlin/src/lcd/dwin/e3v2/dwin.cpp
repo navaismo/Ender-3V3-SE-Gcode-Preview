@@ -10555,6 +10555,18 @@ void DWIN_OctoJobFinish()
   }
 }
 
+
+
+void DWIN_OctoSetPrintTime(char* print_time){
+  const char *vprint_time = print_time && print_time[0] != '\0' ? print_time : "00:00:00";
+  // Copy to reuse vlues outside the function
+  strncpy(vvprint_time, vprint_time, sizeof(vvprint_time) - 1);
+
+  DWIN_Draw_Rectangle(1, All_Black, 120, 123, 230, 143);
+  DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 123, F(vprint_time));
+
+}
+
 void DWIN_OctoShowGCodeImage()
 {
   checkkey = M117Info; // Implement Human Interface Control for M117

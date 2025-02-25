@@ -781,7 +781,7 @@ uint8_t gcodePicDataSendToDwin(char *fileName, unsigned int jpgAddr, unsigned ch
   // msTest = millis();
   // while (1)
   // {
-    ret=read_gcode_model_information();
+    ret=read_gcode_model_information(card.filename);
     // 当gcode中没有pic时，直接返回 -- When there is no pic in gcode, return directly
     if (ret == PIC_MISS_ERR)
     {

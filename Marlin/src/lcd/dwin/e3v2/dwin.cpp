@@ -5394,7 +5394,7 @@ void DC_Show_defaut_imageOcto()
 #endif
 }
 
-static void Isplay_Estimated_Time(int time) // Display remaining time.
+static void Display_Estimated_Time(int time) // Display remaining time.
 {
   int h, m, s;
   char cmd[30] = {0};
@@ -5433,7 +5433,7 @@ static void Image_Preview_Information_Show(uint8_t ret)
       DWIN_ICON_Show(ICON, ICON_LEVEL_CALIBRATION_OFF, ICON_ON_OFF_X, ICON_ON_OFF_Y);
 #endif
   }
-  if (ret == PIC_MISS_ERR)
+  if (ret == METADATA_PARSE_ERROR)
   {
     // No image preview data
     DWIN_Draw_String(false, true, font8x16, Popup_Text_Color, Color_Bg_Black, WORD_TIME_X + DATA_OFFSET_X + 52, WORD_TIME_Y + DATA_OFFSET_Y, F("0"));
@@ -5443,28 +5443,9 @@ static void Image_Preview_Information_Show(uint8_t ret)
   }
   else
   {
-    int predict_time;
-    float height1, height2, height3, volume, Filament;
-    char char_buf[20];
-    char char_buf1[20];
-    char str_1[20] = {0};
-    predict_time = atoi((char *)model_information.pre_time);
-    height1 = atof((char *)model_information.MAXZ);
-    height2 = atof((char *)model_information.MINZ);
-    // height3 = height1 -height2;
-    height3 = atof((char *)model_information.height);
-
-    // Sprintf(char buf,"%.1f",height3);
-    sprintf_P(char_buf, PSTR("%smm"), dtostrf(height3, 1, 1, str_1));
-    Filament = atof((char *)model_information.filament);
-
-    volume = 2.4040625 * Filament;
-    // sprintf(char_buf1,"%.1f",volume);
-    // sprintf_P(char_buf1, PSTR("%smm^3"), dtostrf(volume, 1, 1, str_1));
-    Isplay_Estimated_Time(predict_time); // Show remaining time
+    Display_Estimated_Time(atoi((char *)model_information.pre_time)); // Show remaining time
     DWIN_Draw_String(false, true, font8x16, Popup_Text_Color, Color_Bg_Black, WORD_LENTH_X + DATA_OFFSET_X, WORD_LENTH_Y + DATA_OFFSET_Y, &model_information.filament[0]);
-    DWIN_Draw_String(false, true, font8x16, Popup_Text_Color, Color_Bg_Black, WORD_HIGH_X + DATA_OFFSET_X, WORD_HIGH_Y + DATA_OFFSET_Y, &model_information.height[0]); // high
-    // DWIN_Draw_String(false,true,font8x16, Popup_Text_Color, Color_Bg_Black, 175, 183, char_buf1); //Volume
+    DWIN_Draw_String(false, true, font8x16, Popup_Text_Color, Color_Bg_Black, WORD_HIGH_X + DATA_OFFSET_X, WORD_HIGH_Y + DATA_OFFSET_Y, &model_information.height[0]);
   }
 
 #endif
@@ -5624,9 +5605,10 @@ void HMI_SelectFile()
       // Cancel the suffix. For example: filename.gcode and remove .gocde.
       make_name_without_ext(str, name);
       Draw_Title(str);
-      uint8_t ret = PIC_MISS_ERR;
+      uint8_t ret = METADATA_PARSE_ERROR;
       // Ender-3v3 SE temporarily does not support the image preview function to prevent freezing and displays the default preview image.
-      ret = gcodePicDataSendToDwin(card.filename, VP_OVERLAY_PIC_PREVIEW_1, PRIWIEW_PIC_FORMAT_NEED, PRIWIEW_PIC_RESOLITION_NEED);
+      // ret = gcodePicDataSendToDwin(card.filename, VP_OVERLAY_PIC_PREVIEW_1, PRIWIEW_PIC_FORMAT_NEED, PRIWIEW_PIC_RESOLITION_NEED);
+      ret = read_gcode_model_information(card.filename);
       // if(ret == PIC_MISS_ERR)
       DC_Show_defaut_image();              // Since this project does not have image preview data, the default small robot image is displayed.
       Image_Preview_Information_Show(ret); // Picture preview details display
@@ -9091,6 +9073,20 @@ void Remove_card_window_check(void)
   }
 }
 
+duration_t estimate_remaining_time(const duration_t elapsed)
+{
+  if (model_information.pre_time != NULL) {
+    return duration_t(atoi((char *)model_information.pre_time) - elapsed.value);
+  }
+  // remaining time is remaining file size (total file size minus current file position) times "speed" (file position per elapsed time).
+  // _fileFraction = (_card_percent * 0.01f);
+  // _elapsedTime = (elapsed.value - dwin_heat_time);
+  // _speed = (_fileFraction * (float)card.getFileSize()) / _elapsedTime;
+  // _remainSize = (float)card.getFileSize() * (1 - _fileFraction);
+  // _remain_time = _speed * _remainSize;
+  return duration_t((((_card_percent * 0.01f) * (float)card.getFileSize()) / ((elapsed.value + 1) - dwin_heat_time)) * ((float)card.getFileSize() * (100 - _card_percent)));
+}
+
 void EachMomentUpdate()
 {
   static float card_Index = 0;
@@ -9417,29 +9413,10 @@ void EachMomentUpdate()
 
     // Estimate remaining time every 20 seconds
     static millis_t next_remain_time_update = 0;
-    if (_card_percent >= 1 && ELAPSED(ms, next_remain_time_update) && !HMI_flag.heat_flag) // Rock 20210922
-    {
-      // _remain_time = (elapsed.value -dwin_heat_time) /(_card_percent *0.01f) -(elapsed.value -dwin_heat_time);
-      card_Index = card.getIndex();
-      // card_Index = 1;
-      // rock_20211115 Solve the problem of occasionally abnormal display of remaining time >100H
-      if (card_Index > 0)
-      {
-        _remain_time = ((elapsed.value - dwin_heat_time) * ((float)card.getFileSize() / card_Index)) - (elapsed.value - dwin_heat_time);
-      }
-      else
-      {
-        _remain_time = 0;
-      }
-      next_remain_time_update += DWIN_REMAIN_TIME_UPDATE_INTERVAL;
-      Draw_Print_ProgressRemain();
-    }
-    else if (_card_percent <= 1 && ELAPSED(ms, next_remain_time_update))
-    {
-      // rock_20210831 solves the problem that the remaining time is not cleared.
-      _remain_time = 0;
-      Draw_Print_ProgressRemain();
-    }
+    _remain_time = estimate_remaining_time(elapsed).value;
+
+    next_remain_time_update += DWIN_REMAIN_TIME_UPDATE_INTERVAL;
+    Draw_Print_ProgressRemain();
   }
   else if (dwin_abort_flag && !HMI_flag.home_flag)
   {

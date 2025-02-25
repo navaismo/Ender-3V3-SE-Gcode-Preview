@@ -47,6 +47,14 @@ enum{
   PIC_MISS_ERR,        // gcode无图片
 };
 
+enum{
+  METADATA_PARSE_OK,
+  METADATA_PARSE_ERROR,
+};
+
+#define _GCODE_METADATA_STRING_LENGTH_MAX 80
+#define _MAX_LINES_TO_PARSE 50
+
 typedef struct _model_information_t
 {
   char pre_time[15]; // 预定时间
@@ -96,6 +104,6 @@ extern model_information_t model_information;
 
 extern uint8_t gcodePicDataSendToDwin(char *, unsigned int , unsigned char , unsigned char );
 extern uint8_t OctoDWINPreview();
-extern uint8_t read_gcode_model_information(void);
+extern uint8_t read_gcode_model_information(const char* fileName);
 extern char Parse_Only_Picture_Data(char* fileName,char * time, char * FilamentUsed, char * layerHeight);
 #endif

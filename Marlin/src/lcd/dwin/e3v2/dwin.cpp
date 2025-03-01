@@ -208,7 +208,7 @@ typedef struct
   char longfilename[LONG_FILENAME_LENGTH];
 } PrintFile_InfoTypeDef;
 
-select_t select_page{0}, select_file{0}, select_print{0}, select_prepare{0}, select_control{0}, select_axis{0}, select_temp{0}, select_motion{0}, select_tune{0}, select_advset{0}, select_PLA{0}, select_ABS{0}, select_speed{0}, select_acc{0}, select_jerk{0}, select_step{0}, select_input_shaping{0},select_linear_adv{0}, select_item{0}, select_language{0}, select_hm_set_pid{0}, select_set_pid{0}, select_level{0}, select_show_pic{0};
+select_t select_page{0}, select_file{0}, select_print{0}, select_prepare{0}, select_control{0}, select_axis{0}, select_temp{0}, select_motion{0}, select_tune{0}, select_advset{0}, select_PLA{0}, select_ABS{0}, select_speed{0}, select_acc{0}, select_jerk{0}, select_step{0}, select_input_shaping{0},select_linear_adv{0},select_cextr{0}, select_item{0}, select_language{0}, select_hm_set_pid{0}, select_set_pid{0}, select_level{0}, select_show_pic{0};
 
 uint8_t index_file = MROWS,
         index_prepare = MROWS,
@@ -408,6 +408,38 @@ static void Auto_in_out_feedstock(bool dir) // 0 returns material, 1 feeds
     // WAIT_HOTEND_TEMP(60 *5 *1000, 5); //Wait for the nozzle temperature to reach the set value
   }
 }
+
+// Custom Extrude Process
+static void Custom_Extrude_Process(uint16_t temp, uint16_t length) // Extrude material based on user temp & length
+{
+    HMI_flag.Refresh_bottom_flag = false;  
+    char str[25];  // Sufficient buffer for string and number
+    snprintf(str, sizeof(str), "Extruding %u mm", length);
+    Popup_Window_Feedstork_Tip(1); // Feeding tips
+    SERIAL_ECHOLNPAIR("Extruding: ", str);
+    SERIAL_ECHOLNPAIR("CurrTEMP: ", thermalManager.degHotend(0));
+    SERIAL_ECHOLNPAIR("TargetTEMP: ", temp);
+    SERIAL_ECHOLNPAIR("Length: ", length);
+    SERIAL_ECHOLNPAIR("Termal Temp", thermalManager.degTargetHotend(0));
+    SET_HOTEND_TEMP(temp, 0); // First heat to Target Temp
+    WAIT_HOTEND_TEMP(60 * 5 * 1000, 3);// Wait until the hotend temperature reaches the target temperature
+    
+    delay(1000); // Wait for 1s
+    Clear_Title_Bar(); // Clear title bar
+    DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_Red, Color_Bg_Blue, 10, 4, str); // Draw title 
+    
+    In_out_feedtock(length, FEEDING_DEF_SPEED, true); // Feed material
+    delay(1000); // Wait for 1s
+    Clear_Title_Bar(); // Clear title bar
+    Popup_Window_Feedstork_Finish(1);     // Feed confirmation
+    DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, 79, 264); // OK button
+
+    SET_HOTEND_TEMP(STOP_TEMPERATURE, 0); // Cool down to 140℃
+    checkkey = M117Info;
+}
+
+
+
 /*Get the specified g file information *short_file_name: short file name *file: file information pointer Return value*/
 void get_file_info(char *short_file_name, PrintFile_InfoTypeDef *file)
 {
@@ -1007,11 +1039,11 @@ void Draw_OctoTitle(const char *const title)
   {
     //move flag
     scrollOffset = 0;
-    DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_White, Color_Bg_Blue, 0, 4, shift_name);
+    DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_Red, Color_Bg_Blue, 0, 4, shift_name);
   }
   else
   {
-  DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_White, Color_Bg_Blue, 0, 4, shift_name);
+  DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_Red, Color_Bg_Blue, 0, 4, shift_name);
   }
 
 #endif
@@ -1028,7 +1060,7 @@ void octoUpdateScroll() {
         Clear_Title_Bar(); //clear title bar to avoid ghosting text
         strncpy(visibleText, shift_name + scrollOffset, 30); // copy the text to shift left
         // Draw the string
-        DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_White, Color_Bg_Blue, 0, 4, visibleText);
+        DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_Red, Color_Bg_Blue, 0, 4, visibleText);
         
         // Inc and reset
         scrollOffset++;
@@ -1037,6 +1069,7 @@ void octoUpdateScroll() {
         }
     }
 }
+
 
 
 
@@ -1381,7 +1414,8 @@ inline bool Apply_Encoder(const ENCODER_DiffState &encoder_diffState, auto &valr
 #define PREPARE_CASE_COOL (PREPARE_CASE_ABS + EITHER(HAS_HOTEND, HAS_HEATED_BED))
 #define PREPARE_CASE_LANG (PREPARE_CASE_COOL + 1)
 #define PREPARE_CASE_LCDSOUND (PREPARE_CASE_LANG + 1)
-#define PREPARE_CASE_TOTAL PREPARE_CASE_LCDSOUND
+#define PREPARE_CASE_CUSTOM_EXTRUDE (PREPARE_CASE_LCDSOUND + 1)
+#define PREPARE_CASE_TOTAL PREPARE_CASE_CUSTOM_EXTRUDE
 
 #define CONTROL_CASE_TEMP 1
 #define CONTROL_CASE_MOVE (CONTROL_CASE_TEMP + 1)
@@ -1725,7 +1759,16 @@ void Item_Prepare_LCDSound(const uint8_t row)
   Draw_Menu_Line(row, ICON_Contact);
 }
 
-
+void Item_Prepare_CExtrude(const uint8_t row)
+{
+  if (HMI_flag.language < Language_Max)
+  {
+    DWIN_Draw_Label(MBASE(row)+2, F("Custom Extrude"));
+    //DWIN_ICON_Show(HMI_flag.language, LANGUAGE_IN_STORK, 42, MBASE(row) + JPN_OFFSET);
+    DWIN_ICON_Show(ICON, ICON_More, 208, MBASE(row) - 3);
+  }
+  Draw_Menu_Line(row, ICON_IN_STORK);
+}
 
 
 
@@ -1788,7 +1831,10 @@ void Draw_Prepare_Menu()
 
   if (PVISI(PREPARE_CASE_LCDSOUND))
     Item_Prepare_LCDSound(PSCROL(PREPARE_CASE_LCDSOUND)); // Disable LCD Beeper  
-
+  
+  if (PVISI(PREPARE_CASE_CUSTOM_EXTRUDE))
+    Item_Prepare_CExtrude(PSCROL(PREPARE_CASE_CUSTOM_EXTRUDE)); // Custom Extrude 
+    
   if (select_prepare.now)
     Draw_Menu_Cursor(PSCROL(select_prepare.now));
 }
@@ -4359,7 +4405,7 @@ void HMI_InputShaping_Values()
 }
 
 
-///
+////
 void HMI_LinearAdv_KFactor()
 {
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
@@ -4369,21 +4415,21 @@ void HMI_LinearAdv_KFactor()
   if (Apply_Encoder(encoder_diffState, HMI_ValueStruct.LinearAdv_KFactor)) {
     checkkey = LinearAdv;
     EncoderRate.enabled = false;   
-    LIMIT(HMI_ValueStruct.LinearAdv_KFactor, 0.0f, 500.0f); 
-    planner.extruder_advance_K[0] = HMI_ValueStruct.LinearAdv_KFactor / 100.0f;
+    LIMIT(HMI_ValueStruct.LinearAdv_KFactor, 0.000f, 500.0000f); 
+    planner.extruder_advance_K[0] = HMI_ValueStruct.LinearAdv_KFactor / 1000.0f;
     //SERIAL_ECHOLNPAIR("Saved Value: ", planner.extruder_advance_K[0]);
 
     // Display the saved value (multiplied by 100 for correct rendering)
-    DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 2, 2, VALUERANGE_X, MBASE(1) + 3, _MAX(HMI_ValueStruct.LinearAdv_KFactor, 0.0));
+    DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 2, 3, (VALUERANGE_X - 10 ), MBASE(1) + 3, _MAX(HMI_ValueStruct.LinearAdv_KFactor, 0.0));
     return;
   }
   
   //SERIAL_ECHOLNPAIR("HMI_LinAdv_KFactor Editing: ", HMI_ValueStruct.LinearAdv_KFactor);
   // Ensure the value is within limits **before** displaying
-  LIMIT(HMI_ValueStruct.LinearAdv_KFactor, 0.0f, 500.0f);  // Assuming the real range
+  LIMIT(HMI_ValueStruct.LinearAdv_KFactor, 0.000f, 500.000f);  // Assuming the real range
 
   // Scale for display (float to int conversion)
-  DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Select_Color, 2, 2, VALUERANGE_X, MBASE(1) + 3, _MAX(HMI_ValueStruct.LinearAdv_KFactor, 0.0));
+  DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Select_Color, 2, 3, (VALUERANGE_X - 10 ), MBASE(1) + 3, _MAX(HMI_ValueStruct.LinearAdv_KFactor, 0.0));
     
   
 
@@ -5605,7 +5651,7 @@ void DC_Show_defaut_imageOcto()
 #endif
 }
 
-static void Isplay_Estimated_Time(int time) // Display remaining time.
+static void Display_Estimated_Time(int time) // Display remaining time.
 {
   int h, m, s;
   char cmd[30] = {0};
@@ -5644,7 +5690,7 @@ static void Image_Preview_Information_Show(uint8_t ret)
       DWIN_ICON_Show(ICON, ICON_LEVEL_CALIBRATION_OFF, ICON_ON_OFF_X, ICON_ON_OFF_Y);
 #endif
   }
-  if (ret == PIC_MISS_ERR)
+  if (ret == METADATA_PARSE_ERROR)
   {
     // No image preview data
     DWIN_Draw_String(false, true, font8x16, Popup_Text_Color, Color_Bg_Black, WORD_TIME_X + DATA_OFFSET_X + 52, WORD_TIME_Y + DATA_OFFSET_Y, F("0"));
@@ -5654,28 +5700,10 @@ static void Image_Preview_Information_Show(uint8_t ret)
   }
   else
   {
-    int predict_time;
-    float height1, height2, height3, volume, Filament;
-    char char_buf[20];
-    char char_buf1[20];
-    char str_1[20] = {0};
-    predict_time = atoi((char *)model_information.pre_time);
-    height1 = atof((char *)model_information.MAXZ);
-    height2 = atof((char *)model_information.MINZ);
-    // height3 = height1 -height2;
-    height3 = atof((char *)model_information.height);
-
-    // Sprintf(char buf,"%.1f",height3);
-    sprintf_P(char_buf, PSTR("%smm"), dtostrf(height3, 1, 1, str_1));
-    Filament = atof((char *)model_information.filament);
-
-    volume = 2.4040625 * Filament;
-    // sprintf(char_buf1,"%.1f",volume);
-    // sprintf_P(char_buf1, PSTR("%smm^3"), dtostrf(volume, 1, 1, str_1));
-    Isplay_Estimated_Time(predict_time); // Show remaining time
+    Display_Estimated_Time(atoi((char *)model_information.pre_time)); // Show remaining time
     DWIN_Draw_String(false, true, font8x16, Popup_Text_Color, Color_Bg_Black, WORD_LENTH_X + DATA_OFFSET_X, WORD_LENTH_Y + DATA_OFFSET_Y, &model_information.filament[0]);
-    DWIN_Draw_String(false, true, font8x16, Popup_Text_Color, Color_Bg_Black, WORD_HIGH_X + DATA_OFFSET_X, WORD_HIGH_Y + DATA_OFFSET_Y, &model_information.height[0]); // high
-    // DWIN_Draw_String(false,true,font8x16, Popup_Text_Color, Color_Bg_Black, 175, 183, char_buf1); //Volume
+    DWIN_Draw_String(false, true, font8x16, Popup_Text_Color, Color_Bg_Black, WORD_HIGH_X + DATA_OFFSET_X, WORD_HIGH_Y + DATA_OFFSET_Y, &model_information.height[0]);
+ 
   }
 
 #endif
@@ -5835,9 +5863,10 @@ void HMI_SelectFile()
       // Cancel the suffix. For example: filename.gcode and remove .gocde.
       make_name_without_ext(str, name);
       Draw_Title(str);
-      uint8_t ret = PIC_MISS_ERR;
+      uint8_t ret = METADATA_PARSE_ERROR;
       // Ender-3v3 SE temporarily does not support the image preview function to prevent freezing and displays the default preview image.
-      ret = gcodePicDataSendToDwin(card.filename, VP_OVERLAY_PIC_PREVIEW_1, PRIWIEW_PIC_FORMAT_NEED, PRIWIEW_PIC_RESOLITION_NEED);
+      //ret = gcodePicDataSendToDwin(card.filename, VP_OVERLAY_PIC_PREVIEW_1, PRIWIEW_PIC_FORMAT_NEED, PRIWIEW_PIC_RESOLITION_NEED);
+      ret = read_gcode_model_information(card.filename);
       // if(ret == PIC_MISS_ERR)
       DC_Show_defaut_image();              // Since this project does not have image preview data, the default small robot image is displayed.
       Image_Preview_Information_Show(ret); // Picture preview details display
@@ -6605,6 +6634,169 @@ void HMI_AudioFeedback(const bool success = true)
   }
 }
 
+void Draw_CExtrude_Menu(){
+  Clear_Main_Window();
+  Draw_Mid_Status_Area(true);
+  HMI_flag.Refresh_bottom_flag = false; // Flag refresh bottom parameter
+
+  // Back option
+  Draw_Back_First();
+  // Title
+  Draw_Title(F("Custom Extrude"));
+  // NoozleTemp String Icon
+  DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Hotend, 42, MBASE(1) + JPN_OFFSET);
+  // Menu Line with Nozzle Icon
+  Draw_Menu_Line(1, ICON_HotendTemp);
+  // Current Value of NoozleTemp
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(1) + 3, thermalManager.degTargetHotend(0));
+  
+  // There's no graphical asset for this label, so we just write it as string
+  DWIN_Draw_Label(MBASE(2), F("Ext. Length(mm)"));
+  // Menu Line with Extrusion Icon
+  Draw_Menu_Line(2, ICON_StepE);
+  // Current Value of Extrusion Length
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2) + 3 , HMI_ValueStruct.Extrusion_Length);
+  
+  // There's no graphical asset for this label, so we just write it as string
+  DWIN_Draw_Label(MBASE(3), F("Proceed"));
+  // Menu Line with Home Icon
+  Draw_Menu_Line(3, ICON_Homing);
+
+
+  // Help Info
+  // Info Icon
+  DWIN_ICON_Show(ICON, 56, 115, 175); 
+  const char *str = "Select Your"; 
+  const char *str2 = "Desired Temperature";
+  const char *str3 = "& Extrusion Lenght";
+  // Draw Help Strings
+  DWIN_Draw_String(true, true, font8x16, Color_Blue, Color_Bg_Black, (DWIN_WIDTH - strlen(str) * MENU_CHR_W) / 2, 195, F(str)); // Centered Received String
+  DWIN_Draw_String(true, true, font8x16, Color_Blue, Color_Bg_Black, (DWIN_WIDTH - strlen(str2) * MENU_CHR_W) / 2, 215, F(str2)); // Centered Received String
+  DWIN_Draw_String(true, true, font8x16, Color_Blue, Color_Bg_Black, (DWIN_WIDTH - strlen(str3) * MENU_CHR_W) / 2, 235, F(str3)); // Centered Received String
+  
+}
+
+void HMI_CExtrude_Menu(){
+  ENCODER_DiffState encoder_diffState = get_encoder_state();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+
+  // Avoid flicker by updating only the previous menu
+  if (encoder_diffState == ENCODER_DIFF_CW)
+  {
+    if (select_cextr.inc(1  + 3))
+      Move_Highlight(1, select_cextr.now);
+  }
+  else if (encoder_diffState == ENCODER_DIFF_CCW)
+  {
+    if (select_cextr.dec())
+      Move_Highlight(-1, select_cextr.now);
+  }
+  else if (encoder_diffState == ENCODER_DIFF_ENTER)
+  {
+    switch (select_cextr.now)
+    {
+    case 0: // Back
+      checkkey = Prepare;
+      select_prepare.now = PREPARE_CASE_CUSTOM_EXTRUDE;
+      Draw_Prepare_Menu();
+      break;
+    case 1: // Nozzle Temp
+      checkkey = custom_extrude_temp;
+      HMI_ValueStruct.E_Temp = thermalManager.degTargetHotend(0);
+      LIMIT(HMI_ValueStruct.E_Temp, HEATER_0_MINTEMP, thermalManager.hotend_max_target(0));
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(1) + 3, HMI_ValueStruct.E_Temp);
+      EncoderRate.enabled = true;
+      break;
+    case 2: // Extrusion Length
+      checkkey = custom_extrude_length;
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(2) + 3, HMI_ValueStruct.Extrusion_Length);
+      EncoderRate.enabled = true;
+      break;
+    case 3: // Confirm
+
+       if(thermalManager.degTargetHotend(0) < 195){
+          DWIN_Draw_Rectangle(1, All_Black, 0, 174, 240, 237);
+          // Help Info
+          // Info Icon
+          DWIN_ICON_Show(ICON, 56, 115, 175); 
+          const char *str = "Warning!"; 
+          const char *str2 = "Desired Temperature";
+          const char *str3 = "Too Low! Must be > 195°";
+          // Draw Help Strings
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str) * MENU_CHR_W) / 2, 195, F(str)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str2) * MENU_CHR_W) / 2, 215, F(str2)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str3) * MENU_CHR_W) / 2, 235, F(str3)); // Centered Received String
+          
+
+      }else if(HMI_ValueStruct.Extrusion_Length < 10){
+          DWIN_Draw_Rectangle(1, All_Black, 0, 174, 240, 237);
+          // Help Info
+          // Info Icon
+          DWIN_ICON_Show(ICON, 56, 115, 175); 
+          const char *str = "Warning!"; 
+          const char *str2 = "Desired Length";
+          const char *str3 = "Too short! Must be > 10mm";
+          // Draw Help Strings
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str) * MENU_CHR_W) / 2, 195, F(str)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str2) * MENU_CHR_W) / 2, 215, F(str2)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str3) * MENU_CHR_W) / 2, 235, F(str3)); // Centered Received String
+          
+
+      }else{
+        Custom_Extrude_Process(HMI_ValueStruct.E_Temp, HMI_ValueStruct.Extrusion_Length);        
+      } 
+       break;
+      
+    }
+  }
+  DWIN_UpdateLCD();
+}
+
+void HMI_CustomExtrudeTemp(){
+  ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+  
+  if (Apply_Encoder(encoder_diffState,  HMI_ValueStruct.E_Temp)) {
+    EncoderRate.enabled = false;  
+    LIMIT(HMI_ValueStruct.E_Temp, 190, thermalManager.hotend_max_target(0));
+    checkkey = CExtrude_Menu; 
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(1)+3 , HMI_ValueStruct.E_Temp);
+    thermalManager.setTargetHotend(HMI_ValueStruct.E_Temp, 0);
+ 
+    return;
+    
+  }
+  
+  LIMIT(HMI_ValueStruct.E_Temp, 190, thermalManager.hotend_max_target(0));
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(1)+3 , HMI_ValueStruct.E_Temp);
+
+}
+
+
+void HMI_CustomExtrudeLength(){
+  ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+  
+  if (Apply_Encoder(encoder_diffState,  HMI_ValueStruct.Extrusion_Length)) {
+    EncoderRate.enabled = false;  
+    LIMIT(HMI_ValueStruct.Extrusion_Length, 10, 500);
+    checkkey = CExtrude_Menu; 
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2)+3 , HMI_ValueStruct.Extrusion_Length);
+    return;
+    
+  }
+  
+  LIMIT(HMI_ValueStruct.Extrusion_Length, 10, 500);
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2)+3 , HMI_ValueStruct.Extrusion_Length);
+
+}
+
+
+
+
 /* Prepare */
 void HMI_Prepare()
 {
@@ -6649,6 +6841,11 @@ void HMI_Prepare()
         
         if(index_prepare == PREPARE_CASE_LCDSOUND)
           Item_Prepare_LCDSound(MROWS);
+
+        if(index_prepare == PREPARE_CASE_CUSTOM_EXTRUDE)
+          Item_Prepare_CExtrude(MROWS);  
+
+
       }
       else
       {
@@ -6683,6 +6880,8 @@ void HMI_Prepare()
           Item_Prepare_instork(0);
         else if (index_prepare == 11)
           Item_Prepare_outstork(0);
+        else if (index_prepare == 12)
+          Item_Prepare_PLA(0);  
       }
       else
       {
@@ -6817,9 +7016,21 @@ void HMI_Prepare()
     
     #if ENABLED(DWIN_LCD_BEEP)
       case PREPARE_CASE_LCDSOUND: // Toggle LCD sound
-      toggle_LCDBeep = !toggle_LCDBeep;
+        toggle_LCDBeep = !toggle_LCDBeep;
       break;  
     #endif  
+
+      case PREPARE_CASE_CUSTOM_EXTRUDE: // Pressure height
+        //checkkey = Last_Prepare;
+        Popup_Window_Home();
+        gcode.process_subcommands_now_P(PSTR("G28")); //home
+        delay(200);
+        gcode.process_subcommands_now_P(PSTR("G1 Z35 F300")); // raise Z
+        checkkey = CExtrude_Menu;
+        select_cextr.reset();
+        Draw_CExtrude_Menu();
+        break;
+
 
     default:
       break;
@@ -7966,7 +8177,7 @@ void Draw_LinearAdv_Menu()
   
   Draw_Back_First();
   Draw_Menu_Line(1, ICON_Motion);
-  DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 2, 2, VALUERANGE_X, MBASE(1) + 3, planner.extruder_advance_K[0] * 100);
+  DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 2, 3, (VALUERANGE_X - 10), MBASE(1) + 3, planner.extruder_advance_K[0] * 1000);
 }
 
 
@@ -9140,7 +9351,7 @@ void HMI_LinearAdv()
   // Avoid flicker by updating only the previous menu
   if (encoder_diffState == ENCODER_DIFF_CW)
   {
-    if (select_linear_adv.inc(1 + 3 + ENABLED(HAS_HOTEND)))
+    if (select_linear_adv.inc(1  + ENABLED(HAS_HOTEND)))
       Move_Highlight(1, select_linear_adv.now);
   }
   else if (encoder_diffState == ENCODER_DIFF_CCW)
@@ -9160,7 +9371,7 @@ void HMI_LinearAdv()
     case LINEAR_ADV_KFACTOR:
       checkkey = LinAdv_KFactor;
       SERIAL_ECHOLNPAIR("showMenu Val: ", planner.extruder_advance_K[0]);
-      DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Select_Color, 2, 2, VALUERANGE_X, MBASE(1) + 3, (planner.extruder_advance_K[0] * 100));
+      DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Select_Color, 2, 3, (VALUERANGE_X - 10), MBASE(1) + 3, (planner.extruder_advance_K[0] * 1000));
       EncoderRate.enabled = true;
       break;
     
@@ -9421,6 +9632,21 @@ void Remove_card_window_check(void)
     lSDCardStatus = IS_SD_INSERTED();
   }
 }
+
+duration_t estimate_remaining_time(const duration_t elapsed)
+{
+  if (model_information.pre_time != NULL) {
+    return duration_t(atoi((char *)model_information.pre_time) - elapsed.value);
+  }
+  // remaining time is remaining file size (total file size minus current file position) times "speed" (file position per elapsed time).
+  // _fileFraction = (_card_percent * 0.01f);
+  // _elapsedTime = (elapsed.value - dwin_heat_time);
+  // _speed = (_fileFraction * (float)card.getFileSize()) / _elapsedTime;
+  // _remainSize = (float)card.getFileSize() * (1 - _fileFraction);
+  // _remain_time = _speed * _remainSize;
+  return duration_t((((_card_percent * 0.01f) * (float)card.getFileSize()) / ((elapsed.value + 1) - dwin_heat_time)) * ((float)card.getFileSize() * (100 - _card_percent)));
+}
+
 
 void EachMomentUpdate()
 {
@@ -9748,29 +9974,10 @@ void EachMomentUpdate()
 
     // Estimate remaining time every 20 seconds
     static millis_t next_remain_time_update = 0;
-    if (_card_percent >= 1 && ELAPSED(ms, next_remain_time_update) && !HMI_flag.heat_flag) // Rock 20210922
-    {
-      // _remain_time = (elapsed.value -dwin_heat_time) /(_card_percent *0.01f) -(elapsed.value -dwin_heat_time);
-      card_Index = card.getIndex();
-      // card_Index = 1;
-      // rock_20211115 Solve the problem of occasionally abnormal display of remaining time >100H
-      if (card_Index > 0)
-      {
-        _remain_time = ((elapsed.value - dwin_heat_time) * ((float)card.getFileSize() / card_Index)) - (elapsed.value - dwin_heat_time);
-      }
-      else
-      {
-        _remain_time = 0;
-      }
-      next_remain_time_update += DWIN_REMAIN_TIME_UPDATE_INTERVAL;
-      Draw_Print_ProgressRemain();
-    }
-    else if (_card_percent <= 1 && ELAPSED(ms, next_remain_time_update))
-    {
-      // rock_20210831 solves the problem that the remaining time is not cleared.
-      _remain_time = 0;
-      Draw_Print_ProgressRemain();
-    }
+    _remain_time = estimate_remaining_time(elapsed).value;
+
+    next_remain_time_update += DWIN_REMAIN_TIME_UPDATE_INTERVAL;
+    Draw_Print_ProgressRemain();
   }
   else if (dwin_abort_flag && !HMI_flag.home_flag)
   {
@@ -10266,6 +10473,7 @@ void DWIN_HandleScreen()
     break;
   case LinearAdv:
     HMI_LinearAdv();  
+    break;
   case Step:
     HMI_Step();
     break;
@@ -10327,6 +10535,15 @@ void DWIN_HandleScreen()
   case LinAdv_KFactor:
     HMI_LinearAdv_KFactor();
     break;    
+  case CExtrude_Menu:
+    HMI_CExtrude_Menu();
+    break;  
+  case custom_extrude_temp:
+    HMI_CustomExtrudeTemp();
+    break;
+  case custom_extrude_length:
+    HMI_CustomExtrudeLength();
+    break;
   case Step_value:
     HMI_StepXYZE();
     break;

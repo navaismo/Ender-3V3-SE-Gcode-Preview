@@ -17,24 +17,26 @@
 - [Special thanks to all the contributors](#special-thanks-to-all-the-contributors)
 - [Installation](#installation)
 - [Common Features for the Stand Alone Printer & for Octoprint](#common-features-for-the-stand-alone-printer--for-octoprint)
-  - [The 7x7-Mesh](#-the-7x7-mesh)
-  - [Linear Advance](#-linear-advance)
-  - [Hosts Commands and Support for Runnout Sensor](#-hosts-commands-and-support-for-runnout-sensor)
-  - [Input Shaping Menu](#-input-shaping-menu)
-  - [Added Extrusion Flow Item to the Tune Menu](#-added-extrusion-flow-item-to-the-tune-menu)
-  - [Added Mute/Unmute LCD Buzzer to the Prepare Menu](#-added-muteunmute-lcd-buzzer-to-the-prepare-menu)
-  - [Improved M600 feature](#-improved-m600-feature)
-  - [Raised Max Temperatures Values](#-raised-max-temperatures-values)
+  - [The 7x7-Mesh](#the-7x7-mesh)
+  - [Linear Advance](#linear-advance)
+  - [Hosts Commands and Support for Runnout Sensor](#hosts-commands-and-support-for-runnout-sensor)
+  - [Input Shaping Menu](#input-shaping-menu)
+  - [Added Extrusion Flow Item to the Tune Menu](#added-extrusion-flow-item-to-the-tune-menu)
+  - [Added Mute/Unmute LCD Buzzer to the Prepare Menu](#added-muteunmute-lcd-buzzer-to-the-prepare-menu)
+  - [Improved M600 feature](#improved-m600-feature)
+  - [Raised Max Temperatures Values](#raised-max-temperatures-values)
+  - [Fixed Print Information details for SD Print](#fixed-print-information-details-for-sd-print)
+  - [Linear Advance quick Menu](#linear-advance-quick-menu)
+  - [Custom Extrusion Menu](#custom-extrusion-menu)
 - [Features for Octoprint](#features-for-octoprint)
   - [Configure the plugin](#configure-the-plugin)
-    - [Install Plugin's Dependencies](#-install-plugins-dependencies)
-    - [Set Correct Baud Rate](#-set-correct-baud-rate)
-    - [Add GCODE SCRIPTS](#-add-gcode-scripts)
-    - [Configure O9000 commands](#-configure-o9000-commands)
-    - [Configure The GCODE Preview transmission](#-configure-the-gcode-preview-transmission)
-    - [Select the Based Progress Type for the Percentage](#-select-the-based-progress-type-for-the-percentage)
+    - [Install Plugin's Dependencies](#install-plugins-dependencies)
+    - [Set Correct Baud Rate](#set-correct-baud-rate)
+    - [Add GCODE SCRIPTS](#add-gcode-scripts)
+    - [Configure O9000 commands](#configure-o9000-commands)
+    - [Configure The GCODE Preview transmission](#configure-the-gcode-preview-transmission)
+    - [Select the Based Progress Type for the Percentage](#select-the-based-progress-type-for-the-percentage)
 - [FAQS](#faqs)
-
 ----------
 <br><br><br>
 
@@ -181,6 +183,54 @@ When using M600 code to change filament now the head will park and raise Z to a 
 > - [x] When using standalone printer, the Knob will control the Pause and Continue processes. If you connect the host(Octoprint) then the Knob became useless and you need to control the Pause and Continue from the Octoprint GUI until you disconnect or restart the printer.
 >
 
+
+<br>
+
+## * Fixed Print Information details for SD Print :
+Merged the fix of [PR#39](https://github.com/navaismo/Ender-3V3-SE/pull/39) from [@eduard-sukharev](https://github.com/eduard-sukharev) to get the print details like filament, Estimated time and layer height, when printing from SD Card.
+
+<div align="center">
+
+<a href=""><img src="https://i.imgur.com/Q6LLgo0.jpeg" align="center" height="576" width="440" ></a>
+
+</div>
+
+<br>
+
+## * Linear Advance quick Menu:
+Added a quick Linear Advance Menu under Motion Menu from feature request on [Issue#26](https://github.com/navaismo/Ender-3V3-SE/issues/36)
+
+<div align="center">
+
+<a href=""><img src="https://i.imgur.com/MjZFWX0.jpeg" align="center" height="576" width="940" ></a>
+
+</div>
+
+<br>
+
+## * Custom Extrusion Menu:
+Added a custom Extrusion Menu under Prepare Menu from feature request on [Issue#27](https://github.com/navaismo/Ender-3V3-SE/issues/27). You can Extrude based on different tempearatures and lengths to match your material.
+
+#### Usage:
+> [!TIP]
+>
+> 1. Set your desired temperature above 195°C, else an error will come out.
+> 2. Set your desired extrusion length above 10mm, else an error will come out.
+> 3. Click on proceed.
+> 
+> After that the Noozzle will heat till +-3 Degrees of the desired temp and will extrude the desired length automatically.
+>
+> Finally just click on the confirm button to go out the menu.
+>
+
+
+<div align="center">
+
+<a href=""><img src="https://i.imgur.com/fY8wWJA.jpeg" align="center" height="976" width="1140" ></a>
+
+</div>
+
+----------
 
 <br><br>
 

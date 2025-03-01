@@ -107,6 +107,9 @@ enum processID : uint8_t {
   InputShaping_YZeta,
   LinearAdv,
   LinAdv_KFactor,
+  CExtrude_Menu,
+  custom_extrude_temp,
+  custom_extrude_length,
   HomeOff,
   HomeOffX,
   HomeOffY,
@@ -659,6 +662,7 @@ typedef struct
   #if ENABLED(HAS_HOTEND)
     celsius_t E_Temp = 0;
     int16_t E_Flow = 0;
+    int16_t Extrusion_Length = 0;
   #endif
   #if ENABLED(HAS_HEATED_BED)
     celsius_t Bed_Temp = 0;

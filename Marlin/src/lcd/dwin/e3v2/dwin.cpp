@@ -6507,8 +6507,39 @@ void HMI_CExtrude_Menu(){
       EncoderRate.enabled = true;
       break;
     case 3: // Confirm
-       Custom_Extrude_Process(HMI_ValueStruct.E_Temp, HMI_ValueStruct.Extrusion_Length);        
-      break;
+
+       if(thermalManager.degTargetHotend(0) < 195){
+          DWIN_Draw_Rectangle(1, All_Black, 0, 174, 240, 237);
+          // Help Info
+          // Info Icon
+          DWIN_ICON_Show(ICON, 56, 115, 175); 
+          const char *str = "Warning!"; 
+          const char *str2 = "Desired Temperature";
+          const char *str3 = "Too Low! Must be > 195°";
+          // Draw Help Strings
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str) * MENU_CHR_W) / 2, 195, F(str)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str2) * MENU_CHR_W) / 2, 215, F(str2)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str3) * MENU_CHR_W) / 2, 235, F(str3)); // Centered Received String
+          
+
+      }else if(HMI_ValueStruct.Extrusion_Length < 10){
+          DWIN_Draw_Rectangle(1, All_Black, 0, 174, 240, 237);
+          // Help Info
+          // Info Icon
+          DWIN_ICON_Show(ICON, 56, 115, 175); 
+          const char *str = "Warning!"; 
+          const char *str2 = "Desired Length";
+          const char *str3 = "Too short! Must be > 10mm";
+          // Draw Help Strings
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str) * MENU_CHR_W) / 2, 195, F(str)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str2) * MENU_CHR_W) / 2, 215, F(str2)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str3) * MENU_CHR_W) / 2, 235, F(str3)); // Centered Received String
+          
+
+      }else{
+        Custom_Extrude_Process(HMI_ValueStruct.E_Temp, HMI_ValueStruct.Extrusion_Length);        
+      } 
+       break;
       
     }
   }
@@ -6522,7 +6553,7 @@ void HMI_CustomExtrudeTemp(){
   
   if (Apply_Encoder(encoder_diffState,  HMI_ValueStruct.E_Temp)) {
     EncoderRate.enabled = false;  
-    LIMIT(HMI_ValueStruct.E_Temp, HEATER_0_MINTEMP, thermalManager.hotend_max_target(0));
+    LIMIT(HMI_ValueStruct.E_Temp, 190, thermalManager.hotend_max_target(0));
     checkkey = CExtrude_Menu; 
     DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(1)+3 , HMI_ValueStruct.E_Temp);
     thermalManager.setTargetHotend(HMI_ValueStruct.E_Temp, 0);
@@ -6531,7 +6562,7 @@ void HMI_CustomExtrudeTemp(){
     
   }
   
-  LIMIT(HMI_ValueStruct.E_Temp, HEATER_0_MINTEMP, thermalManager.hotend_max_target(0));
+  LIMIT(HMI_ValueStruct.E_Temp, 190, thermalManager.hotend_max_target(0));
   DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(1)+3 , HMI_ValueStruct.E_Temp);
 
 }
@@ -6544,14 +6575,14 @@ void HMI_CustomExtrudeLength(){
   
   if (Apply_Encoder(encoder_diffState,  HMI_ValueStruct.Extrusion_Length)) {
     EncoderRate.enabled = false;  
-    LIMIT(HMI_ValueStruct.Extrusion_Length, 0, 200);
+    LIMIT(HMI_ValueStruct.Extrusion_Length, 10, 500);
     checkkey = CExtrude_Menu; 
     DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2)+3 , HMI_ValueStruct.Extrusion_Length);
     return;
     
   }
   
-  LIMIT(HMI_ValueStruct.Extrusion_Length, 0, 200);
+  LIMIT(HMI_ValueStruct.Extrusion_Length, 10, 500);
   DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2)+3 , HMI_ValueStruct.Extrusion_Length);
 
 }

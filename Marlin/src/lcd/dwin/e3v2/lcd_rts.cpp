@@ -216,6 +216,10 @@ uint8_t read_gcode_model_information(const char* fileName)
   unsigned char buf_state = 0;
   uint8_t line_idx=0;
   
+  memset(model_information.pre_time, 0, sizeof(model_information.pre_time));
+  memset(model_information.filament, 0, sizeof(model_information.filament));
+  memset(model_information.height, 0, sizeof(model_information.height));
+  
   card.openFileRead(fileName);
 
   while((line_idx++) < _MAX_LINES_TO_PARSE)
@@ -234,11 +238,7 @@ uint8_t read_gcode_model_information(const char* fileName)
 
       // If you can't find ';' beyond max line length, it means the file is wrong.
       if (i + 1 == _GCODE_METADATA_STRING_LENGTH_MAX)
-      {
-        memset(model_information.pre_time, 0, sizeof(model_information.pre_time));
-        memset(model_information.filament, 0, sizeof(model_information.filament));
-        memset(model_information.height, 0, sizeof(model_information.height));
-        
+      {        
         return METADATA_PARSE_ERROR;
       }
 

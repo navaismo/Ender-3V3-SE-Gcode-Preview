@@ -270,7 +270,11 @@ public:
     #endif
     #if ENABLED(LCD_SET_PROGRESS_MANUALLY)
       static progress_t progress_override;
-      static void set_progress(const progress_t p) { progress_override = _MIN(p, 100U * (PROGRESS_SCALE)); }
+      #if ENABLED(DWIN_CREALITY_LCD)
+        static void set_progress(const progress_t p);
+      #else
+        static void set_progress(const progress_t p) { progress_override = _MIN(p, 100U * (PROGRESS_SCALE)); }
+      #endif
       static void set_progress_done() { progress_override = (PROGRESS_MASK + 1U) + 100U * (PROGRESS_SCALE); }
       static void progress_reset() { if (progress_override & (PROGRESS_MASK + 1U)) set_progress(0); }
       #if ENABLED(SHOW_REMAINING_TIME)
@@ -280,10 +284,16 @@ public:
           return progress ? elapsed.value * (100 * (PROGRESS_SCALE) - progress) / progress : 0;
         }
         #if ENABLED(USE_M73_REMAINING_TIME)
-          static uint32_t remaining_time;
-          FORCE_INLINE static void set_remaining_time(const uint32_t r) { remaining_time = r; }
-          FORCE_INLINE static uint32_t get_remaining_time() { return remaining_time ?: _calculated_remaining_time(); }
-          FORCE_INLINE static void reset_remaining_time() { set_remaining_time(0); }
+          #if ENABLED(DWIN_CREALITY_LCD)
+            void set_remaining_time(const uint32_t r);
+            uint32_t get_remaining_time();
+            void reset_remaining_time();
+          #else
+            static uint32_t remaining_time;
+            FORCE_INLINE static void set_remaining_time(const uint32_t r) { remaining_time = r; }
+            FORCE_INLINE static uint32_t get_remaining_time() { return remaining_time ?: _calculated_remaining_time(); }
+            FORCE_INLINE static void reset_remaining_time() { set_remaining_time(0); }
+          #endif
         #else
           FORCE_INLINE static uint32_t get_remaining_time() { return _calculated_remaining_time(); }
         #endif

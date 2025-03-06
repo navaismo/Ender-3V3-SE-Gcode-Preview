@@ -4564,6 +4564,10 @@ void octo_make_name_without_ext(char *dst, char *src, size_t maxlen = MENU_CHAR_
 void HMI_SDCardInit() { card.cdroot(); }
 
 void MarlinUI::refresh() { /* Nothing to see here */ }
+void MarlinUI::set_remaining_time (const uint32_t r) { _remain_time = r; }
+void MarlinUI::set_progress(const progress_t p) { _card_percent = _MIN(p, 100U * (PROGRESS_SCALE)); }
+uint32_t MarlinUI::get_remaining_time() { return _remain_time; }
+void MarlinUI::reset_remaining_time() { MarlinUI::set_remaining_time(0); }
 
 #define ICON_Folder ICON_More
 
@@ -5421,7 +5425,8 @@ void HMI_SelectFile()
     {
       // Cd up
       SDCard_Up();
-      goto HMI_SelectFileExit;
+      DWIN_UpdateLCD();
+      return;
     }
     else
     {
@@ -5430,7 +5435,8 @@ void HMI_SelectFile()
       if (card.flag.filenameIsDir)
       {
         SDCard_Folder(card.filename);
-        goto HMI_SelectFileExit;
+        DWIN_UpdateLCD();
+        return;
       }
       else
       {
@@ -5470,7 +5476,6 @@ void HMI_SelectFile()
       Image_Preview_Information_Show(ret); // Picture preview details display
     }
   }
-HMI_SelectFileExit:
   DWIN_UpdateLCD();
 }
 
@@ -8845,7 +8850,7 @@ void Remove_card_window_check(void)
 
 duration_t estimate_remaining_time(const duration_t elapsed)
 {
-  if (model_information.pre_time != NULL) {
+  if (model_information.pre_time[0] != 0) {
     return duration_t(atoi((char *)model_information.pre_time) - elapsed.value);
   }
   // remaining time is remaining file size (total file size minus current file position) times "speed" (file position per elapsed time).
@@ -8854,7 +8859,12 @@ duration_t estimate_remaining_time(const duration_t elapsed)
   // _speed = (_fileFraction * (float)card.getFileSize()) / _elapsedTime;
   // _remainSize = (float)card.getFileSize() * (1 - _fileFraction);
   // _remain_time = _speed * _remainSize;
-  return duration_t((((_card_percent * 0.01f) * (float)card.getFileSize()) / ((elapsed.value + 1) - dwin_heat_time)) * ((float)card.getFileSize() * (100 - _card_percent)));
+  if (elapsed.value - dwin_heat_time < 60 && _card_percent < 1) {
+    return duration_t(0);
+  }
+
+  // remaining time is (elapsed time / relative file position) - elapsed time
+  return duration_t((elapsed.value - dwin_heat_time) / (_card_percent * 0.01f + (_card_percent > 0 ? 0.001f : 0)) - (elapsed.value - dwin_heat_time));
 }
 
 void EachMomentUpdate()

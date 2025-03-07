@@ -466,7 +466,7 @@
 #endif
 
 // Aliases for LCD features
-#if EITHER(IS_ULTRA_LCD, EXTENSIBLE_UI)
+#if ANY(IS_ULTRA_LCD, EXTENSIBLE_UI, DWIN_CREALITY_LCD)
   #define HAS_DISPLAY 1
 #endif
 

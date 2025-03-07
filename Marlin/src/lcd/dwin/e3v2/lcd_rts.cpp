@@ -1,4 +1,5 @@
 #include "lcd_rts.h"
+#include "../../marlinui.h"
 #include "../../../inc/MarlinConfigPre.h"
 #include "../../../MarlinCore.h"
 #include "../../../core/serial.h"
@@ -216,6 +217,11 @@ uint8_t read_gcode_model_information(const char* fileName)
   unsigned char buf_state = 0;
   uint8_t line_idx=0;
   
+  ui.reset_remaining_time();
+  ui.total_time_reset();
+  memset(model_information.filament, 0, sizeof(model_information.filament));
+  memset(model_information.height, 0, sizeof(model_information.height));
+  
   card.openFileRead(fileName);
 
   while((line_idx++) < _MAX_LINES_TO_PARSE)
@@ -234,11 +240,7 @@ uint8_t read_gcode_model_information(const char* fileName)
 
       // If you can't find ';' beyond max line length, it means the file is wrong.
       if (i + 1 == _GCODE_METADATA_STRING_LENGTH_MAX)
-      {
-        memset(model_information.pre_time, 0, sizeof(model_information.pre_time));
-        memset(model_information.filament, 0, sizeof(model_information.filament));
-        memset(model_information.height, 0, sizeof(model_information.height));
-        
+      {        
         return METADATA_PARSE_ERROR;
       }
 
@@ -277,8 +279,7 @@ uint8_t read_gcode_model_information(const char* fileName)
         switch(k)
         {
           case 0: // "TIME"
-            memset(model_information.pre_time, 0, sizeof(model_information.pre_time));
-            strcpy(model_information.pre_time, value_buf);
+            ui.set_total_time(atoi(value_buf));
             break;
           case 1: // "Filament used"
             memset(model_information.filament, 0, sizeof(model_information.filament));           

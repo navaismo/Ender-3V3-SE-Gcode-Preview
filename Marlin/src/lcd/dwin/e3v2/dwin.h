@@ -215,6 +215,7 @@ enum DWIN_Poupe{
   Level_faild_QR, //调平失败请扫描二维码，获取解决方案
   Boot_undone,  //开机引导未完成
   CRTouch_err,  //CRTouch异常，
+  UnknownError, // Used for future MarlinUI integration
 };
 extern enum DC_language current_language;
 // Picture ID
@@ -753,7 +754,6 @@ typedef struct {
 
 extern HMI_value_t HMI_ValueStruct;
 extern HMI_Flag_t HMI_flag;
-extern uint32_t _remain_time;   // rock_20210830
 extern bool end_flag; //防止反复刷新曲线完成指令
 // Show ICO
 void ICON_Print(bool show);

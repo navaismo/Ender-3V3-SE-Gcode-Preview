@@ -71,6 +71,9 @@ lin 3D Printer Firmware
 #include "lcd_rts.h"
 #include "../../../module/AutoOffset.h"
 
+#include <QRCodeGenerator.h>
+
+
 #ifndef MACHINE_SIZE
 #define MACHINE_SIZE STRINGIFY(X_BED_SIZE) "x" STRINGIFY(Y_BED_SIZE) "x" STRINGIFY(Z_MAX_POS)
 #endif
@@ -148,6 +151,8 @@ int8_t shift_amt;  // = 0
 millis_t shift_ms; // = 0
 static uint8_t left_move_index = 0;
 
+bool qrShown = false;
+
 /* Value Init */
 HMI_value_t HMI_ValueStruct;
 HMI_Flag_t HMI_flag{0};
@@ -193,7 +198,7 @@ typedef struct
   char longfilename[LONG_FILENAME_LENGTH];
 } PrintFile_InfoTypeDef;
 
-select_t select_page{0}, select_file{0}, select_print{0}, select_prepare{0}, select_control{0}, select_axis{0}, select_temp{0}, select_motion{0}, select_tune{0}, select_advset{0}, select_PLA{0}, select_ABS{0}, select_speed{0}, select_acc{0}, select_jerk{0}, select_step{0}, select_input_shaping{0}, select_item{0}, select_language{0}, select_hm_set_pid{0}, select_set_pid{0}, select_level{0}, select_show_pic{0};
+select_t select_page{0}, select_file{0}, select_print{0}, select_prepare{0}, select_control{0}, select_axis{0}, select_temp{0}, select_motion{0}, select_tune{0}, select_advset{0}, select_PLA{0}, select_ABS{0}, select_speed{0}, select_acc{0}, select_jerk{0}, select_step{0}, select_input_shaping{0}, select_linear_adv{0}, select_cextr{0}, select_item{0}, select_language{0}, select_hm_set_pid{0}, select_set_pid{0}, select_level{0}, select_show_pic{0};
 
 uint8_t index_file = MROWS,
         index_prepare = MROWS,
@@ -244,7 +249,11 @@ char vvtotal_layer[50];
 char vvcurr_layer[50];
 char vvthumb[50];
 char vvprogress[30];
-bool updateOctoData = true;
+bool updateOctoData = false;
+char Octo_ETA_Global[20];
+char Octo_Progress_Global[20];
+char Octo_CL_Global[20];
+  
 #endif
 #endif
 
@@ -386,6 +395,39 @@ static void Auto_in_out_feedstock(bool dir) // 0 returns material, 1 feeds
     // WAIT_HOTEND_TEMP(60 *5 *1000, 5); //Wait for the nozzle temperature to reach the set value
   }
 }
+
+// Custom Extrude Process
+static void Custom_Extrude_Process(uint16_t temp, uint16_t length) // Extrude material based on user temp & length
+{
+    HMI_flag.Refresh_bottom_flag = false;  
+    char str[25];  // Sufficient buffer for string and number
+    snprintf(str, sizeof(str), "Extruding %u mm", length);
+    Popup_Window_Feedstork_Tip(1); // Feeding tips
+    SERIAL_ECHOLNPAIR("Extruding: ", str);
+    SERIAL_ECHOLNPAIR("CurrTEMP: ", thermalManager.degHotend(0));
+    SERIAL_ECHOLNPAIR("TargetTEMP: ", temp);
+    SERIAL_ECHOLNPAIR("Length: ", length);
+    SERIAL_ECHOLNPAIR("Termal Temp", thermalManager.degTargetHotend(0));
+    SET_HOTEND_TEMP(temp, 0); // First heat to Target Temp
+    WAIT_HOTEND_TEMP(60 * 5 * 1000, 3);// Wait until the hotend temperature reaches the target temperature
+    
+    delay(1000); // Wait for 1s
+    Clear_Title_Bar(); // Clear title bar
+    DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_Red, Color_Bg_Blue, 10, 4, str); // Draw title 
+    
+    In_out_feedtock(length, FEEDING_DEF_SPEED, true); // Feed material
+    delay(1000); // Wait for 1s
+    Clear_Title_Bar(); // Clear title bar
+    Popup_Window_Feedstork_Finish(1);     // Feed confirmation
+    DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, 79, 264); // OK button
+
+    SET_HOTEND_TEMP(STOP_TEMPERATURE, 0); // Cool down to 140℃
+    checkkey = M117Info;
+}
+
+
+
+
 /*Get the specified g file information *short_file_name: short file name *file: file information pointer Return value*/
 void get_file_info(char *short_file_name, PrintFile_InfoTypeDef *file)
 {
@@ -985,11 +1027,11 @@ void Draw_OctoTitle(const char *const title)
   {
     //move flag
     scrollOffset = 0;
-    DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_White, Color_Bg_Blue, 0, 4, shift_name);
+    DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_Red, Color_Bg_Blue, 0, 4, shift_name);
   }
   else
   {
-  DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_White, Color_Bg_Blue, 0, 4, shift_name);
+  DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_Red, Color_Bg_Blue, 0, 4, shift_name);
   }
 
 #endif
@@ -1006,7 +1048,7 @@ void octoUpdateScroll() {
         Clear_Title_Bar(); //clear title bar to avoid ghosting text
         strncpy(visibleText, shift_name + scrollOffset, 30); // copy the text to shift left
         // Draw the string
-        DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_White, Color_Bg_Blue, 0, 4, visibleText);
+        DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_Red, Color_Bg_Blue, 0, 4, visibleText);
         
         // Inc and reset
         scrollOffset++;
@@ -1335,12 +1377,16 @@ inline bool Apply_Encoder(const ENCODER_DiffState &encoder_diffState, auto &valr
 #define MOTION_CASE_JERK (MOTION_CASE_ACCEL + ENABLED(HAS_CLASSIC_JERK))
 #define MOTION_CASE_STEPS (MOTION_CASE_JERK + 1)
 #define MOTION_CASE_INPUT_SHAPING (MOTION_CASE_STEPS + 1)
-#define MOTION_CASE_TOTAL MOTION_CASE_INPUT_SHAPING
+#define MOTION_CASE_LINADV (MOTION_CASE_INPUT_SHAPING + 1)
+#define MOTION_CASE_TOTAL MOTION_CASE_LINADV
 
 #define INPUT_SHAPING_CASE_XFREQ 1
 #define INPUT_SHAPING_CASE_YFREQ (INPUT_SHAPING_CASE_XFREQ + 1)
 #define INPUT_SHAPING_CASE_XZETA (INPUT_SHAPING_CASE_YFREQ + 1)
 #define INPUT_SHAPING_CASE_YZETA (INPUT_SHAPING_CASE_XZETA + 1)
+
+#define LINEAR_ADV_KFACTOR 1
+
 
 #define PREPARE_CASE_MOVE 1
 #define PREPARE_CASE_DISA 2
@@ -1354,7 +1400,9 @@ inline bool Apply_Encoder(const ENCODER_DiffState &encoder_diffState, auto &valr
 #define PREPARE_CASE_ABS (PREPARE_CASE_PLA + ENABLED(HAS_HOTEND))
 #define PREPARE_CASE_COOL (PREPARE_CASE_ABS + EITHER(HAS_HOTEND, HAS_HEATED_BED))
 #define PREPARE_CASE_LANG (PREPARE_CASE_COOL + 1)
-#define PREPARE_CASE_TOTAL PREPARE_CASE_LANG
+#define PREPARE_CASE_LCDSOUND (PREPARE_CASE_LANG + 1)
+#define PREPARE_CASE_CUSTOM_EXTRUDE (PREPARE_CASE_LCDSOUND + 1)
+#define PREPARE_CASE_TOTAL PREPARE_CASE_CUSTOM_EXTRUDE
 
 #define CONTROL_CASE_TEMP 1
 #define CONTROL_CASE_MOVE (CONTROL_CASE_TEMP + 1)
@@ -1684,6 +1732,35 @@ void Item_Prepare_Lang(const uint8_t row)
   Draw_Menu_Line(row, ICON_Language);
 }
 
+void Item_Prepare_LCDSound(const uint8_t row)
+{
+  if (HMI_flag.language < Language_Max)
+  {
+
+    DWIN_Draw_Label(MBASE(row)+2, F("Toggle LCD Beeper"));
+    // DWIN_Frame_AreaCopy(1,   1, 104,  56, 117, LBLX, MBASE(row));
+  }
+  
+  Draw_Menu_Icon(row, ICON_Contact);
+  Draw_Menu_Line(row, ICON_Contact);
+}
+
+
+void Item_Prepare_CExtrude(const uint8_t row)
+{
+  if (HMI_flag.language < Language_Max)
+  {
+    DWIN_Draw_Label(MBASE(row)+2, F("Custom Extrude"));
+    //DWIN_ICON_Show(HMI_flag.language, LANGUAGE_IN_STORK, 42, MBASE(row) + JPN_OFFSET);
+    DWIN_ICON_Show(ICON, ICON_More, 208, MBASE(row) - 3);
+  }
+  Draw_Menu_Line(row, ICON_IN_STORK);
+}
+
+
+
+
+
 void Draw_Prepare_Menu()
 {
   Clear_Main_Window();
@@ -1740,6 +1817,13 @@ void Draw_Prepare_Menu()
 #endif
   if (PVISI(PREPARE_CASE_LANG))
     Item_Prepare_Lang(PSCROL(PREPARE_CASE_LANG)); // Language CN/EN
+  
+  if (PVISI(PREPARE_CASE_LCDSOUND))
+    Item_Prepare_LCDSound(PSCROL(PREPARE_CASE_LCDSOUND)); // Disable LCD Beeper
+      
+  if (PVISI(PREPARE_CASE_CUSTOM_EXTRUDE))
+    Item_Prepare_CExtrude(PSCROL(PREPARE_CASE_CUSTOM_EXTRUDE)); // Custom Extrude 
+    
 
   if (select_prepare.now)
     Draw_Menu_Cursor(PSCROL(select_prepare.now));
@@ -2021,10 +2105,61 @@ void Draw_Tune_Menu()
     Draw_Menu_Cursor(TSCROL(select_tune.now));
 }
 
+void draw_qrcode(const uint16_t topLeftX, const uint16_t topLeftY, const uint8_t moduleSize, const char *qrcode_data) {
+  // The structure to manage the QR code
+  QRCode qrcode;
 
+  // QR version 2 allows strings up to 47 chars, e.g. "https://bit.ly/qwertyuiop_asdfghjkl_zxcvbnm_123"
+  uint8_t QR_VERSION = 2;
 
+  // Allocate a chunk of memory to store the QR code
+  uint8_t qrcodeBytes[qrcode_getBufferSize(QR_VERSION)];
 
+  qrcode_initText(&qrcode, qrcodeBytes, QR_VERSION, ECC_LOW, qrcode_data);
 
+  DWIN_Draw_Rectangle(1, Color_White, topLeftX, topLeftY, topLeftX + qrcode.size * moduleSize, topLeftY + qrcode.size * moduleSize);
+
+  // top left position marker
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, topLeftX, topLeftY, topLeftX + moduleSize * 7, topLeftY + moduleSize * 7);
+  DWIN_Draw_Rectangle(1, Color_White, topLeftX + moduleSize * 1, topLeftY + moduleSize * 1, topLeftX + moduleSize * 6, topLeftY + moduleSize * 6);
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, topLeftX + moduleSize * 2, topLeftY + moduleSize * 2, topLeftX + moduleSize * 5, topLeftY + moduleSize * 5);
+  // top right position marker
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, topLeftX + moduleSize * (qrcode.size - 7), topLeftY, topLeftX + moduleSize * qrcode.size, topLeftY + moduleSize * 7);
+  DWIN_Draw_Rectangle(1, Color_White, topLeftX + moduleSize * (qrcode.size - 6), topLeftY + moduleSize * 1, topLeftX + moduleSize * (qrcode.size - 1), topLeftY + moduleSize * 6);
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, topLeftX + moduleSize * (qrcode.size - 5), topLeftY + moduleSize * 2, topLeftX + moduleSize * (qrcode.size - 2), topLeftY + moduleSize * 5);
+  // // bottom left position marker
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, topLeftX, topLeftY + moduleSize * (qrcode.size - 7), topLeftX + moduleSize * 7, topLeftY + moduleSize * qrcode.size);
+  DWIN_Draw_Rectangle(1, Color_White, topLeftX + moduleSize * 1, topLeftY + moduleSize * (qrcode.size - 6), topLeftX + moduleSize * 6, topLeftY + moduleSize * (qrcode.size - 1));
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, topLeftX + moduleSize * 2, topLeftY + moduleSize * (qrcode.size - 5), topLeftX + moduleSize * 5, topLeftY + moduleSize * (qrcode.size - 2));
+  
+  for (uint8_t y = 0; y < qrcode.size; y++) {
+      for (uint8_t x = 0; x < qrcode.size; x++) {
+        // skip top left and bottom left position markers
+        if (x < 7 && (y < 7 || y > (qrcode.size - 7 - 1))) {
+          continue;
+        }
+        // skip top right position marker
+        if (x > (qrcode.size - 7 - 1) && y < 7) {
+          continue;
+        }
+        if (qrcode_getModule(&qrcode, x, y)) {
+          DWIN_Draw_Rectangle(
+            1,
+            Color_Bg_Black,
+            topLeftX + moduleSize * x, 
+            topLeftY + moduleSize * y,
+            topLeftX + moduleSize * (x + 1),
+            topLeftY + moduleSize * (y + 1)
+          );
+          delay(5);
+        }
+      }
+  }
+}
+
+void draw_qrcode(const uint16_t topLeftX, const uint16_t topLeftY, const uint8_t moduleSize, const __FlashStringHelper *qrcode_data) {
+  draw_qrcode(topLeftX, topLeftY, moduleSize, (const char *)qrcode_data);
+}
 
 void draw_max_en(const uint16_t line)
 {
@@ -2047,11 +2182,23 @@ void draw_steps_per_mm(const uint16_t line)
 {
   DWIN_Frame_AreaCopy(1, 1, 149, 120, 161, LBLX, line); // "steps per mm"
 }
+
+
 void draw_input_shaping(const uint16_t line)
 {
   // There's no graphical asset for this label, so we just write it as string
   DWIN_Draw_Label(line, GET_TEXT_F(MSG_INPUT_SHAPING));
 }
+
+void draw_lin_adv(const uint16_t line)
+{
+  // There's no graphical asset for this label, so we just write it as string
+  DWIN_Draw_Label(line, F("Linear Advance"));
+  Draw_Menu_Line(line - 2, ICON_Motion);
+}
+
+
+
 void say_x(const uint16_t inset, const uint16_t line)
 {
   DWIN_Frame_AreaCopy(1, 95, 104, 102, 114, LBLX + inset, line); // "x"
@@ -2068,6 +2215,9 @@ void say_e(const uint16_t inset, const uint16_t line)
 {
   DWIN_Frame_AreaCopy(1, 237, 119, 244, 129, LBLX + inset, line); // "e"
 }
+
+
+
 
 void Draw_Motion_Menu()
 {
@@ -2092,6 +2242,7 @@ void Draw_Motion_Menu()
     // DWIN_Frame_AreaCopy(1, 153, 148, 194, 161, LBLX, MBASE(MOTION_CASE_STEPS));         //Flow ratio
     DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Step, 42, MBASE(MOTION_CASE_STEPS) + JPN_OFFSET);
     draw_input_shaping(MBASE(MOTION_CASE_INPUT_SHAPING) + 2); // "Input shaping"
+    draw_lin_adv(MBASE(MOTION_CASE_LINADV) + 2); // "Linear Advance"
   }
   else
   {
@@ -2118,6 +2269,7 @@ void Draw_Motion_Menu()
 #endif // HAS_CLASSIC_JERK
     draw_steps_per_mm(MBASE(MOTION_CASE_STEPS)); // "steps per mm"
     draw_input_shaping(MBASE(MOTION_CASE_INPUT_SHAPING) + 2); // "Input shaping"
+    draw_lin_adv(MBASE(MOTION_CASE_LINADV) + 2); // "Linear Advance"
 #endif // USE_STRING_TITLES
   }
 
@@ -2140,7 +2292,10 @@ void Draw_Motion_Menu()
   Draw_More_Icon(i);
   Draw_Menu_Line(++i, ICON_Setspeed);
   Draw_More_Icon(i);
+  Draw_Menu_Line(++i, ICON_Motion);
+  Draw_More_Icon(i);
   Draw_Menu_Icon(MOTION_CASE_STEPS, ICON_Step);
+
 }
 
 //
@@ -3112,6 +3267,7 @@ void Goto_PrintProcess()
 
 void Goto_MainMenu()
 {
+  updateOctoData = false;
   checkkey = MainMenu;
   Clear_Main_Window();
   HMI_flag.Refresh_bottom_flag = true; // Flag does not refresh bottom parameters
@@ -3325,6 +3481,7 @@ void HMI_Zoffset()
 
 void HMI_O9000Zoffset()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3442,6 +3599,7 @@ void HMI_ETemp()
 
 void HMI_O9000ETemp()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3512,6 +3670,7 @@ void HMI_O9000ETemp()
 
 void HMI_O9000EFlow()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3645,6 +3804,7 @@ void HMI_BedTemp()
 
 void HMI_O9000BedTemp()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3789,6 +3949,7 @@ void HMI_FanSpeed()
 
 void HMI_O9000FanSpeed()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -3877,6 +4038,7 @@ void HMI_PrintSpeed()
 
 void HMI_O9000PrintSpeed()
 {
+  updateOctoData = false;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -4042,6 +4204,39 @@ void HMI_InputShaping_Values()
 
   DWIN_UpdateLCD();
 }
+
+
+////
+void HMI_LinearAdv_KFactor()
+{
+  ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+  
+  if (Apply_Encoder(encoder_diffState, HMI_ValueStruct.LinearAdv_KFactor)) {
+    checkkey = LinearAdv;
+    EncoderRate.enabled = false;   
+    LIMIT(HMI_ValueStruct.LinearAdv_KFactor, 0.000f, 500.0000f); 
+    planner.extruder_advance_K[0] = HMI_ValueStruct.LinearAdv_KFactor / 1000.0f;
+    //SERIAL_ECHOLNPAIR("Saved Value: ", planner.extruder_advance_K[0]);
+
+    // Display the saved value (multiplied by 100 for correct rendering)
+    DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 2, 3, (VALUERANGE_X - 10 ), MBASE(1) + 3, _MAX(HMI_ValueStruct.LinearAdv_KFactor, 0.0));
+    return;
+  }
+  
+  //SERIAL_ECHOLNPAIR("HMI_LinAdv_KFactor Editing: ", HMI_ValueStruct.LinearAdv_KFactor);
+  // Ensure the value is within limits **before** displaying
+  LIMIT(HMI_ValueStruct.LinearAdv_KFactor, 0.000f, 500.000f);  // Assuming the real range
+
+  // Scale for display (float to int conversion)
+  DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Select_Color, 2, 3, (VALUERANGE_X - 10 ), MBASE(1) + 3, _MAX(HMI_ValueStruct.LinearAdv_KFactor, 0.0));
+    
+  
+
+}
+////
+
 
 void HMI_StepXYZE()
 {
@@ -5644,6 +5839,7 @@ void HMI_PauseOrStop()
   {
     if (select_print.now == 1)
     { // pause window
+      updateOctoData = false;
       if (HMI_flag.select_flag)
       {
         HMI_flag.pause_action = true;
@@ -5664,6 +5860,7 @@ void HMI_PauseOrStop()
     }
     else if (select_print.now == 2)
     { // stop window
+      updateOctoData = false;
       if (HMI_flag.select_flag)
       {
         if (HMI_flag.home_flag)
@@ -5727,7 +5924,7 @@ void HMI_O900PauseOrStop()
           SERIAL_ECHOLN("M79 S2"); // 3:cloud print pause
         }
        
-        DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
+        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
 
         // Queue.inject p(pstr("m25"));
         RUN_AND_WAIT_GCODE_CMD("M25", true);
@@ -5737,7 +5934,7 @@ void HMI_O900PauseOrStop()
       else
       {
        
-        DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
+        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
       }
     }
     else if (select_print.now == 2)
@@ -5777,7 +5974,7 @@ void HMI_O900PauseOrStop()
       }
       else
         
-      DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
+      DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
       // cancel stop
     }
   }
@@ -6083,6 +6280,7 @@ void HMI_Auto_In_Feedstock()
   }
 }
 
+
 void HMI_Auto_IN_Out_Feedstock()
 {
   ENCODER_DiffState encoder_diffState = get_encoder_state();
@@ -6246,6 +6444,171 @@ void HMI_AudioFeedback(const bool success = true)
   }
 }
 
+
+
+
+void Draw_CExtrude_Menu(){
+  Clear_Main_Window();
+  Draw_Mid_Status_Area(true);
+  HMI_flag.Refresh_bottom_flag = false; // Flag refresh bottom parameter
+
+  // Back option
+  Draw_Back_First();
+  // Title
+  Draw_Title(F("Custom Extrude"));
+  // NoozleTemp String Icon
+  DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Hotend, 42, MBASE(1) + JPN_OFFSET);
+  // Menu Line with Nozzle Icon
+  Draw_Menu_Line(1, ICON_HotendTemp);
+  // Current Value of NoozleTemp
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(1) + 3, thermalManager.degTargetHotend(0));
+  
+  // There's no graphical asset for this label, so we just write it as string
+  DWIN_Draw_Label(MBASE(2), F("Ext. Length(mm)"));
+  // Menu Line with Extrusion Icon
+  Draw_Menu_Line(2, ICON_StepE);
+  // Current Value of Extrusion Length
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2) + 3 , HMI_ValueStruct.Extrusion_Length);
+  
+  // There's no graphical asset for this label, so we just write it as string
+  DWIN_Draw_Label(MBASE(3), F("Proceed"));
+  // Menu Line with Home Icon
+  Draw_Menu_Line(3, ICON_Homing);
+
+
+  // Help Info
+  // Info Icon
+  DWIN_ICON_Show(ICON, 56, 115, 175); 
+  const char *str = "Select Your"; 
+  const char *str2 = "Desired Temperature";
+  const char *str3 = "& Extrusion Lenght";
+  // Draw Help Strings
+  DWIN_Draw_String(true, true, font8x16, Color_Blue, Color_Bg_Black, (DWIN_WIDTH - strlen(str) * MENU_CHR_W) / 2, 195, F(str)); // Centered Received String
+  DWIN_Draw_String(true, true, font8x16, Color_Blue, Color_Bg_Black, (DWIN_WIDTH - strlen(str2) * MENU_CHR_W) / 2, 215, F(str2)); // Centered Received String
+  DWIN_Draw_String(true, true, font8x16, Color_Blue, Color_Bg_Black, (DWIN_WIDTH - strlen(str3) * MENU_CHR_W) / 2, 235, F(str3)); // Centered Received String
+  
+}
+
+void HMI_CExtrude_Menu(){
+  ENCODER_DiffState encoder_diffState = get_encoder_state();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+
+  // Avoid flicker by updating only the previous menu
+  if (encoder_diffState == ENCODER_DIFF_CW)
+  {
+    if (select_cextr.inc(1  + 3))
+      Move_Highlight(1, select_cextr.now);
+  }
+  else if (encoder_diffState == ENCODER_DIFF_CCW)
+  {
+    if (select_cextr.dec())
+      Move_Highlight(-1, select_cextr.now);
+  }
+  else if (encoder_diffState == ENCODER_DIFF_ENTER)
+  {
+    switch (select_cextr.now)
+    {
+    case 0: // Back
+      checkkey = Prepare;
+      select_prepare.now = PREPARE_CASE_CUSTOM_EXTRUDE;
+      Draw_Prepare_Menu();
+      break;
+    case 1: // Nozzle Temp
+      checkkey = custom_extrude_temp;
+      HMI_ValueStruct.E_Temp = thermalManager.degTargetHotend(0);
+      LIMIT(HMI_ValueStruct.E_Temp, HEATER_0_MINTEMP, thermalManager.hotend_max_target(0));
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(1) + 3, HMI_ValueStruct.E_Temp);
+      EncoderRate.enabled = true;
+      break;
+    case 2: // Extrusion Length
+      checkkey = custom_extrude_length;
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(2) + 3, HMI_ValueStruct.Extrusion_Length);
+      EncoderRate.enabled = true;
+      break;
+    case 3: // Confirm
+
+       if(thermalManager.degTargetHotend(0) < 195){
+          DWIN_Draw_Rectangle(1, All_Black, 0, 174, 240, 237);
+          // Help Info
+          // Info Icon
+          DWIN_ICON_Show(ICON, 56, 115, 175); 
+          const char *str = "Warning!"; 
+          const char *str2 = "Desired Temperature";
+          const char *str3 = "Too Low! Must be > 195°";
+          // Draw Help Strings
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str) * MENU_CHR_W) / 2, 195, F(str)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str2) * MENU_CHR_W) / 2, 215, F(str2)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str3) * MENU_CHR_W) / 2, 235, F(str3)); // Centered Received String
+          
+
+      }else if(HMI_ValueStruct.Extrusion_Length < 10){
+          DWIN_Draw_Rectangle(1, All_Black, 0, 174, 240, 237);
+          // Help Info
+          // Info Icon
+          DWIN_ICON_Show(ICON, 56, 115, 175); 
+          const char *str = "Warning!"; 
+          const char *str2 = "Desired Length";
+          const char *str3 = "Too short! Must be > 10mm";
+          // Draw Help Strings
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str) * MENU_CHR_W) / 2, 195, F(str)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str2) * MENU_CHR_W) / 2, 215, F(str2)); // Centered Received String
+          DWIN_Draw_String(true, true, font8x16, Color_Yellow, Color_Bg_Black, (DWIN_WIDTH - strlen(str3) * MENU_CHR_W) / 2, 235, F(str3)); // Centered Received String
+          
+
+      }else{
+        Custom_Extrude_Process(HMI_ValueStruct.E_Temp, HMI_ValueStruct.Extrusion_Length);        
+      } 
+       break;
+      
+    }
+  }
+  DWIN_UpdateLCD();
+}
+
+void HMI_CustomExtrudeTemp(){
+  ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+  
+  if (Apply_Encoder(encoder_diffState,  HMI_ValueStruct.E_Temp)) {
+    EncoderRate.enabled = false;  
+    LIMIT(HMI_ValueStruct.E_Temp, 190, thermalManager.hotend_max_target(0));
+    checkkey = CExtrude_Menu; 
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(1)+3 , HMI_ValueStruct.E_Temp);
+    thermalManager.setTargetHotend(HMI_ValueStruct.E_Temp, 0);
+ 
+    return;
+    
+  }
+  
+  LIMIT(HMI_ValueStruct.E_Temp, 190, thermalManager.hotend_max_target(0));
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(1)+3 , HMI_ValueStruct.E_Temp);
+
+}
+
+
+void HMI_CustomExtrudeLength(){
+  ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+  
+  if (Apply_Encoder(encoder_diffState,  HMI_ValueStruct.Extrusion_Length)) {
+    EncoderRate.enabled = false;  
+    LIMIT(HMI_ValueStruct.Extrusion_Length, 10, 500);
+    checkkey = CExtrude_Menu; 
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2)+3 , HMI_ValueStruct.Extrusion_Length);
+    return;
+    
+  }
+  
+  LIMIT(HMI_ValueStruct.Extrusion_Length, 10, 500);
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2)+3 , HMI_ValueStruct.Extrusion_Length);
+
+}
+
+
+
 /* Prepare */
 void HMI_Prepare()
 {
@@ -6287,6 +6650,12 @@ void HMI_Prepare()
 #endif
         if (index_prepare == PREPARE_CASE_LANG)
           Item_Prepare_Lang(MROWS);
+
+        if(index_prepare == PREPARE_CASE_LCDSOUND)
+          Item_Prepare_LCDSound(MROWS); 
+        
+          if(index_prepare == PREPARE_CASE_CUSTOM_EXTRUDE)
+          Item_Prepare_CExtrude(MROWS);   
       }
       else
       {
@@ -6319,6 +6688,11 @@ void HMI_Prepare()
           Item_Prepare_Offset(0);
         else if (index_prepare == 10)
           Item_Prepare_instork(0);
+        else if (index_prepare == 11)
+          Item_Prepare_outstork(0);   
+        else if (index_prepare == 12)
+          Item_Prepare_PLA(0);   
+          
       }
       else
       {
@@ -6450,12 +6824,45 @@ void HMI_Prepare()
       Draw_Select_language();
       checkkey = Selectlanguage;
       break;
+
+#if ENABLED(DWIN_LCD_BEEP)
+    case PREPARE_CASE_LCDSOUND: // Toggle LCD sound
+      toggle_LCDBeep = !toggle_LCDBeep;
+      break;  
+#endif
+
+    case PREPARE_CASE_CUSTOM_EXTRUDE: // Pressure height
+      //checkkey = Last_Prepare;
+      Popup_Window_Home();
+      gcode.process_subcommands_now_P(PSTR("G28")); //home
+      delay(200);
+      gcode.process_subcommands_now_P(PSTR("G1 Z35 F300")); // raise Z
+      checkkey = CExtrude_Menu;
+      select_cextr.reset();
+      Draw_CExtrude_Menu();
+    break;  
+
     default:
       break;
     }
   }
   DWIN_UpdateLCD();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void Draw_Temperature_Menu()
 {
@@ -7585,6 +7992,24 @@ void Draw_InputShaping_Menu()
 #endif
 }
 
+
+void Draw_LinearAdv_Menu()
+{
+  Clear_Main_Window();
+  HMI_flag.Refresh_bottom_flag = true; // Flag refresh bottom parameter
+
+  Draw_Title(F("Linear Advance"));
+  DWIN_Draw_Label(MBASE(1), F("K-Factor"));
+  
+  Draw_Back_First();
+  Draw_Menu_Line(1, ICON_Motion);
+  DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 2, 3, (VALUERANGE_X - 10), MBASE(1) + 3, planner.extruder_advance_K[0] * 1000);
+}
+
+
+
+
+
 /* Motion */
 void HMI_Motion()
 {
@@ -7640,6 +8065,12 @@ void HMI_Motion()
       select_input_shaping.reset();
       Draw_InputShaping_Menu();
       break;
+
+    case MOTION_CASE_LINADV: // Linear Advance
+      checkkey = LinearAdv;
+      select_linear_adv.reset();
+      Draw_LinearAdv_Menu();
+      break;  
     default:
       break;
     }
@@ -8064,8 +8495,9 @@ void HMI_O9000()
         // RUN_AND_WAIT_GCODE_CMD("M24", true);
         // queue.enqueue_now_P(PSTR("M24"));
         // gcode.process_subcommands_now_P(PSTR("M24"));
-        updateOctoData = true;
-        DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
+        updateOctoData = false;
+        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
+
       }
       else
       {
@@ -8150,7 +8582,8 @@ void HMI_O9000Tune()
       select_print.set(0);
       // SERIAL_ECHOLNPAIR("returning from Tune menu with FN as: ", vvfilename);
       
-      DWIN_OctoPrintJob(vvfilename, vvprint_time, vvptime_left, vvtotal_layer, vvcurr_layer, vvthumb, vvprogress);
+      DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
+
     }
     break;
     case TUNE_CASE_SPEED: // Print speed
@@ -8616,6 +9049,52 @@ void HMI_InputShaping()
   DWIN_UpdateLCD();
 }
 
+////
+/* Linear Advance */
+void HMI_LinearAdv()
+{
+  ENCODER_DiffState encoder_diffState = get_encoder_state();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+
+  // Avoid flicker by updating only the previous menu
+  if (encoder_diffState == ENCODER_DIFF_CW)
+  {
+    if (select_linear_adv.inc(1  + ENABLED(HAS_HOTEND)))
+      Move_Highlight(1, select_linear_adv.now);
+  }
+  else if (encoder_diffState == ENCODER_DIFF_CCW)
+  {
+    if (select_linear_adv.dec())
+      Move_Highlight(-1, select_linear_adv.now);
+  }
+  else if (encoder_diffState == ENCODER_DIFF_ENTER)
+  {
+    switch (select_linear_adv.now)
+    {
+    case 0: // Back
+      checkkey = Motion;
+      select_motion.now = MOTION_CASE_LINADV;
+      Draw_Motion_Menu();
+      break;
+    case LINEAR_ADV_KFACTOR:
+      checkkey = LinAdv_KFactor;
+      SERIAL_ECHOLNPAIR("showMenu Val: ", planner.extruder_advance_K[0]);
+      DWIN_Draw_FloatValue(true, true, 0, font8x16, Color_White, Select_Color, 2, 3, (VALUERANGE_X - 10), MBASE(1) + 3, (planner.extruder_advance_K[0] * 1000));
+      EncoderRate.enabled = true;
+      break;
+    
+    }
+  }
+  DWIN_UpdateLCD();
+}
+
+////
+
+
+
+
+
 #if HAS_CLASSIC_JERK
 /* Max Jerk */
 void HMI_MaxJerk()
@@ -8871,10 +9350,17 @@ void EachMomentUpdate()
   static millis_t next_var_update_ms = 0, next_rts_update_ms = 0, next_heat_flash_ms = 0, next_heat_bed_flash_ms = 0, next_high_ms = 0, next_move_file_name_ms = 0;
   const millis_t ms = millis();
   char *fileName = TERN(POWER_LOSS_RECOVERY, recovery.info.sd_filename, "");
+
   PrintFile_InfoTypeDef fileInfo = {0};
   if (ELAPSED(ms, next_var_update_ms))
   {
     next_var_update_ms = ms + DWIN_VAR_UPDATE_INTERVAL;
+
+    if(serial_connection_active){
+      DWIN_OctoUpdate();
+    }
+
+
     if (!HMI_flag.Refresh_bottom_flag)
     {
       update_middle_variable();
@@ -9680,6 +10166,9 @@ void DWIN_HandleScreen()
   case InputShaping:
     HMI_InputShaping();
     break;
+  case LinearAdv:
+    HMI_LinearAdv();
+    break;  
   case Step:
     HMI_Step();
     break;
@@ -9738,6 +10227,18 @@ void DWIN_HandleScreen()
   case InputShaping_YZeta:
     HMI_InputShaping_Values();
     break;
+  case LinAdv_KFactor:
+    HMI_LinearAdv_KFactor();
+    break;
+  case CExtrude_Menu:
+    HMI_CExtrude_Menu();
+    break;  
+  case custom_extrude_temp:
+    HMI_CustomExtrudeTemp();
+    break;
+  case custom_extrude_length:
+    HMI_CustomExtrudeLength();
+    break;  
   case Step_value:
     HMI_StepXYZE();
     break;
@@ -10133,6 +10634,7 @@ void HMI_Auto_Bed_PID(void)
 // Function to send string to LCD
 void DWIN_Show_M117(char *str)
 {
+  updateOctoData = false;
   clearOctoScrollVars(); // If the OctoPrint-E3v3seprintjobdetails plugin is enable we will receive a cancel M117 so clear vars, if not is safe to clear since no job will be render
   checkkey = M117Info; // Implement Human Interface Control for M117
   Clear_Main_Window();
@@ -10148,14 +10650,14 @@ void DWIN_Show_M117(char *str)
 // Function to render the print job details from Octoprint in the LCD.
 void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char *total_layer, char *curr_layer, char *thumbnail, char *progress)
 {
-  updateOctoData = true;
+  //updateOctoData = false;
   // verify that none is null or emtpy before printing the values
   const char *vfilename = filename && filename[0] != '\0' ? filename : "Default Dummy FileName";
   const char *vprint_time = print_time && print_time[0] != '\0' ? print_time : "00:00:00";
   const char *vptime_left = ptime_left && ptime_left[0] != '\0' ? ptime_left : "00:00:00";
   const char *vtotal_layer = total_layer && total_layer[0] != '\0' ? total_layer : "0";
   const char *vcurr_layer = curr_layer && curr_layer[0] != '\0' ? curr_layer : "      0";
-  ; // first render layer is always 0 from there we update values(spaces are needed to correct format and clear values)
+  // first render layer is always 0 from there we update values(spaces are needed to correct format and clear values)
   const char *vthumb = "";
   const char *vprogress = progress && progress[0] != '\0' ? progress : "0";
 
@@ -10175,7 +10677,6 @@ void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char 
   Draw_Mid_Status_Area(true);
   HMI_flag.Refresh_bottom_flag = false;
 
-  // Todo Scroll filename if bigger than 25
   Draw_OctoTitle(vfilename); // FileName as Title
   if (vthumb == NULL || vthumb[0] == '\0')
     DC_Show_defaut_imageOcto(); // For the moment show default preview
@@ -10207,42 +10708,55 @@ void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char 
   ICON_Stop();
 }
 
-// Function to update progress from octoprint in LCD
-void DWIN_OctoUpdate_Progress(const char *progress)
-{
-  const char *uPgr = progress && progress[0] != '\0' ? progress : "0"; // ensure non empty string
-  strncpy(vvprogress, uPgr, sizeof(vvprogress) - 1);
-  if (updateOctoData)
-  {
-    Draw_Print_ProgressBarOcto(atoi(uPgr));
-  }
+// Function to set the printing variables
+void DWIN_SetPrintingDetails(const char *eta, const char *progress, const char *current_layer) {
+    if (eta) strncpy(Octo_ETA_Global, eta, sizeof(Octo_ETA_Global) - 1);
+    if (progress) strncpy(Octo_Progress_Global, progress, sizeof(Octo_Progress_Global) - 1);
+    if (current_layer) strncpy(Octo_CL_Global, current_layer, sizeof(Octo_CL_Global) - 1);
+
+    updateOctoData = true;
 }
 
-// Function to update Layer from octoprint in LCD
-void DWIN_OctoUpdate_CLayer(const char *layer)
-{
-  const char *uVal = layer && layer[0] != '\0' ? layer : "---";
-  strncpy(vvcurr_layer, uVal, sizeof(vvcurr_layer) - 1); // ensure non empty string
+void DWIN_OctoUpdate() {
+  if (updateOctoData) {
+    //We use a static variable to keep the "step" account.
+    static uint8_t updateStep = 0;
+    
+    switch (updateStep) {
+      case 0:
+        //Step 0: Update the scroll
+        octoUpdateScroll();
+        
+        break;
 
-  if (updateOctoData)
-  {
-    DWIN_Draw_Rectangle(1, All_Black, 80, 165, 144, 177);                                                            // Clear previous Value
-    DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 80, 165, F(uVal)); // Update Current layer with new value, trying to keep simetry
+      case 1:
+        //Step 1: Update Layer in the LCD
+        DWIN_Draw_Rectangle(1, All_Black, 80, 165, 144, 177);
+        DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 80, 165, F(Octo_CL_Global));
+        break;
+
+      case 2:{
+        //Step 2: Update the progress in the LCD
+        uint8_t lp = atoi(Octo_Progress_Global);
+        Draw_Print_ProgressBarOcto(lp);
+        break;
+      }
+
+      case 3:  
+        //Step 2: Update ETA in the LCD
+        DWIN_Draw_Rectangle(1, All_Black, 120, 144, 230, 156);
+        DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 144, F(Octo_ETA_Global));
+        break;
+
+    }
+    
+    //Increase the counter and restart it upon reaching 4 (0 to 3)
+    updateStep = (updateStep + 1) % 4;
   }
+
+  updateOctoData = false;
 }
 
-// Function to update ETA from octoprint in LCD
-void DWIN_OctoUpdate_ETA(const char *time)
-{
-  octoUpdateScroll();
-  const char *uTime = time && time[0] != '\0' ? time : "00 : 00 : 00";
-  strncpy(vvptime_left, uTime, sizeof(vvptime_left) - 1); // ensure non empty string
-  if (updateOctoData)
-  {
-    DWIN_Draw_Rectangle(1, All_Black, 120, 144, 230, 156);                                     // Clear previous Value
-    DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 144, F(uTime)); // Update Current layer with new value, trying to keep simetry
-  }
-}
 
 void clearOctoScrollVars(){
   shift_name[0] = '\0';       // clear scrolling variables
@@ -10253,12 +10767,12 @@ void clearOctoScrollVars(){
 // finishc job, clear controls and allow go back main window
 void DWIN_OctoJobFinish()
 {
-  updateOctoData=true;
+  updateOctoData = false;
   checkkey = OctoFinish;
   HMI_flag.Refresh_bottom_flag = true;
   char show_layers[51] = {0};
   clearOctoScrollVars();
-  snprintf(show_layers, sizeof(show_layers), "%s / %s", vvcurr_layer, vvtotal_layer);
+  snprintf(show_layers, sizeof(show_layers), "%s / %s", vvtotal_layer, vvtotal_layer);
   Clear_Title_Bar();
   Clear_Main_Window();
   DC_Show_defaut_imageOcto(); // For the moment show default preview
@@ -10266,9 +10780,14 @@ void DWIN_OctoJobFinish()
   DWIN_Draw_String(false, false, font6x12, Color_Yellow, Color_Bg_Black, 12, 145, F("Print Time:")); // Label Print Time
   DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 136, 145, F(vvprint_time));   // value Print Time
   DWIN_Draw_String(false, false, font6x12, Color_Yellow, Color_Bg_Black, 12, 165, F("Elapsed Time:"));  // Label Time Left
-  DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 138, 165, F(vvptime_left));   // value Time Left
+  DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 138, 165, F(Octo_ETA_Global));   // value Time Left
   DWIN_Draw_String(false, false, font6x12, Color_Yellow, Color_Bg_Black, 12, 186, F("Layer:"));      // Label Print Time
   DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 80, 186, F(show_layers));    // Label Print Time
+
+  //Clear Variables of the print job
+  Octo_ETA_Global[0] = '\0';
+  Octo_Progress_Global[0] = '\0';
+  Octo_CL_Global[0] = '\0';
 
   // show print done confirm
   if (HMI_flag.language < Language_Max) // Rock 20211120
@@ -10276,6 +10795,18 @@ void DWIN_OctoJobFinish()
     DWIN_ICON_Show(HMI_flag.language, LANGUAGE_LEVEL_FINISH, TITLE_X, TITLE_Y);
     DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, OK_BUTTON_X, 225);
   }
+}
+
+
+
+void DWIN_OctoSetPrintTime(char* print_time){
+  const char *vprint_time = print_time && print_time[0] != '\0' ? print_time : "00:00:00";
+  // Copy to reuse vlues outside the function
+  strncpy(vvprint_time, vprint_time, sizeof(vvprint_time) - 1);
+
+  DWIN_Draw_Rectangle(1, All_Black, 120, 123, 230, 143);
+  DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 123, F(vprint_time));
+
 }
 
 void DWIN_OctoShowGCodeImage()

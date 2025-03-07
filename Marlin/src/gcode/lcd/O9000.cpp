@@ -58,8 +58,8 @@ void GcodeSuite::O9000()
     if (strcmp(my_string, "SC|") == 0)
     {
       // Received all params lets render
-      //SERIAL_ECHOLN("Received all params, now render in LCD");
       TERN_(DWIN_CREALITY_LCD, DWIN_OctoPrintJob(filename, print_time, ptime_left, total_layers, curr_layer, thumbnail, progress));
+      SERIAL_ECHOLN("O9000 sc-rendered");
     }
     else if (strstr(my_string, "SFN|") != NULL)
     {
@@ -72,6 +72,14 @@ void GcodeSuite::O9000()
       // Set Print Time
       strncpy(print_time, getParsedValue(my_string), sizeof(print_time) - 1);
       //SERIAL_ECHOLNPAIR("Parameter 2 print_time set: ", print_time);
+      
+    }
+    else if (strstr(my_string, "UPT|") != NULL)
+    {
+      // Update Print Time
+      strncpy(print_time, getParsedValue(my_string), sizeof(print_time) - 1);
+      //SERIAL_ECHOLNPAIR("Parameter 2 print_time set: ", print_time);
+      DWIN_OctoSetPrintTime(print_time);
     }
     else if (strstr(my_string, "SET|") != NULL)
     {
@@ -96,27 +104,6 @@ void GcodeSuite::O9000()
       // Set Progress
       strncpy(progress, getParsedValue(my_string), sizeof(progress) - 1);
       //SERIAL_ECHOLNPAIR("Parameter 6 progress set: ", progress);
-    }
-    else if (strstr(my_string, "UPP|") != NULL)
-    {
-      // Update Progress
-      const char *val = getParsedValue(my_string);
-      //SERIAL_ECHOLNPAIR("Updating Progress to: ", val);
-      TERN_(DWIN_CREALITY_LCD, DWIN_OctoUpdate_Progress(val));
-    }
-    else if (strstr(my_string, "UCL|") != NULL)
-    {
-      // Update Current Layer
-      const char *val = getParsedValue(my_string);
-      //SERIAL_ECHOLNPAIR("Updating Curr_Layer to: ", val);
-      TERN_(DWIN_CREALITY_LCD, DWIN_OctoUpdate_CLayer(val));
-    }
-    else if (strstr(my_string, "UET|") != NULL)
-    {
-      // Update Print Time Left
-      const char *val = getParsedValue(my_string);
-      //SERIAL_ECHOLNPAIR("Updating Curr_Layer to: ", val);
-      TERN_(DWIN_CREALITY_LCD, DWIN_OctoUpdate_ETA(val));
     }
     else if (strstr(my_string, "PF|") != NULL)
     {

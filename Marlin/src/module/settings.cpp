@@ -36,7 +36,7 @@
  */
 
 // Change EEPROM version if the structure changes
-#define EEPROM_VERSION "V83"
+#define EEPROM_VERSION "V84"
 #define EEPROM_OFFSET 100
 
 // Check the integrity of data offsets.
@@ -491,7 +491,10 @@ typedef struct SettingsDataStruct {
     float shaping_y_frequency, // M593 Y F
           shaping_y_zeta;      // M593 Y D
   #endif
-
+  // LCD Sound
+  #if ENABLED(DWIN_LCD_BEEP)
+    uint8_t toggleLCDBeep;
+  #endif   
 //  uint16_t Auto_PID_Value_set1;
 //  uint16_t Auto_PID_Value_set2;
 //  uint16_t Auto_PID_Value_set[3];
@@ -1472,6 +1475,17 @@ void MarlinSettings::postprocess() {
       #endif
     #endif
 
+
+    // Save LCD Beeper settings
+    #if ENABLED(DWIN_LCD_BEEP)
+    {
+      uint8_t beep = toggle_LCDBeep;
+      EEPROM_WRITE(beep);
+    }
+    #endif
+
+
+
     // Auto_PID_Value_set[1]=HMI_ValueStruct.Auto_PID_Value[1];
     // Auto_PID_Value_set[2]=HMI_ValueStruct.Auto_PID_Value[2];
     // EEPROM_WRITE(Auto_PID_Value_set[1]);
@@ -2418,6 +2432,16 @@ void MarlinSettings::postprocess() {
         stepper.set_shaping_damping_ratio(Y_AXIS, _data[1]);
       }
       #endif
+
+
+      #if ENABLED(DWIN_LCD_BEEP)
+      {
+        uint8_t beep;
+        EEPROM_READ(beep); //Read LCD_Beeper state
+        toggle_LCDBeep = (beep > 0) ? 1 : 0;
+      }
+      #endif
+
 
       //  EEPROM_READ(Auto_PID_Value_set[1]);
       //  if(!Auto_PID_Value_set[1])Auto_PID_Value_set[1]=100;

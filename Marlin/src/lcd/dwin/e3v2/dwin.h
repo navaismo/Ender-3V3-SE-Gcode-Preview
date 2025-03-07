@@ -105,6 +105,11 @@ enum processID : uint8_t {
   InputShaping_XZeta,
   InputShaping_YFreq,
   InputShaping_YZeta,
+  LinearAdv,
+  LinAdv_KFactor,
+  CExtrude_Menu,
+  custom_extrude_temp,
+  custom_extrude_length,
   HomeOff,
   HomeOffX,
   HomeOffY,
@@ -640,6 +645,7 @@ extern enum DC_language current_language;
 #define Button_Select_Color 0xFFFF  // Selected color
 #define All_Black         0x0000  // Selected color
 
+
 extern volatile uint8_t checkkey;
 extern float zprobe_zoffset;
 extern char print_filename[16];
@@ -657,6 +663,7 @@ typedef struct
   #if ENABLED(HAS_HOTEND)
     celsius_t E_Temp = 0;
     int16_t E_Flow = 0;
+    int16_t Extrusion_Length = 0;
   #endif
   #if ENABLED(HAS_HEATED_BED)
     celsius_t Bed_Temp = 0;
@@ -673,6 +680,7 @@ typedef struct
   float Move_Y_scaled     = 0;
   float Move_Z_scaled     = 0;
   float InputShaping_scaled = 0;
+  float LinearAdv_KFactor= 0;
   uint8_t Curve_index = 0;
   uint16_t Auto_PID_Temp  = 0;
   uint16_t Auto_PID_Value[3] = {0, 100, 260}; // 1:热床温度; 2 喷嘴温度
@@ -856,12 +864,8 @@ inline void DWIN_StartHoming() { HMI_flag.home_flag = true; }
 void DWIN_Show_M117(char* str);
 // Octoprint Print status
 void DWIN_OctoPrintJob(char* filename, char* print_time, char* ptime_left, char* total_layer, char* curr_layer, char* thumbnail, char *progress);
-// Function to update progress from octoprint in LCD
-void DWIN_OctoUpdate_Progress(const char *progress);
-// Function to update progress from octoprint in LCD
-void DWIN_OctoUpdate_CLayer(const char *layer);
-// Function to update progress from octoprint in LCD
-void DWIN_OctoUpdate_ETA(const char *time);
+// Octoprint Update status
+void DWIN_OctoUpdate();
 // Function to show Gcode Preview
 void DWIN_OctoShowGCodeImage();
 // Fucntion to finish job
@@ -871,6 +875,12 @@ void Draw_OctoTitle(const char *const title);
 void octo_make_name_without_ext(char *dst, char *src, size_t maxlen);
 void octoUpdateScroll();
 void clearOctoScrollVars();
+// Set Values for updates
+void DWIN_SetPrintingDetails(const char *eta, const char *progress, const char *current_layer);
+
+// Update print time
+void DWIN_OctoSetPrintTime(char* print_time);
+
 
 
 void DWIN_CompletedHoming();

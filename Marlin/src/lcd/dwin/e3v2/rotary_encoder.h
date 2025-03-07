@@ -52,6 +52,10 @@ typedef enum {
 // Encoder initialization
 void Encoder_Configuration();
 
+#if ENABLED(DWIN_LCD_BEEP)
+ extern uint8_t toggle_LCDBeep;
+#endif
+
 // Analyze encoder value and return state
 ENCODER_DiffState Encoder_ReceiveAnalyze();
 

@@ -214,9 +214,7 @@ constexpr float default_max_acceleration[] = DEFAULT_MAX_ACCELERATION;
 constexpr float default_max_jerk[] = {DEFAULT_XJERK, DEFAULT_YJERK, DEFAULT_ZJERK, DEFAULT_EJERK};
 #endif
 
-static uint16_t _card_percent = 0;
 uint8_t Cloud_Progress_Bar = 0; // The cloud prints the transmitted progress bar data
-uint32_t _remain_time = 0;      // Rock 20210830
 
 float default_nozzle_ptemp = DEFAULT_Kp;
 float default_nozzle_itemp = DEFAULT_Ki;
@@ -2777,6 +2775,16 @@ void Popup_window_boot(uint8_t type_popup)
       DWIN_Draw_Rectangle(0, Button_Select_Color, BUTTON_BOOT_X - 2, BUTTON_BOOT_Y - 2, BUTTON_BOOT_X + 83, BUTTON_BOOT_Y + 33);
     }
     break;
+  case UnknownError:
+    if (HMI_flag.language < Language_Max)
+    {
+      DWIN_Draw_String(false, false, font10x20, Color_Red, Color_Bg_Black, WORD_HINT_CLEAR_X, WORD_HINT_CLEAR_Y, F("Unknown error"));
+      DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, BUTTON_BOOT_X, BUTTON_BOOT_Y); // OK button
+      // Add a white selection block
+      DWIN_Draw_Rectangle(0, Button_Select_Color, BUTTON_BOOT_X - 1, BUTTON_BOOT_Y - 1, BUTTON_BOOT_X + 82, BUTTON_BOOT_Y + 32);
+      DWIN_Draw_Rectangle(0, Button_Select_Color, BUTTON_BOOT_X - 2, BUTTON_BOOT_Y - 2, BUTTON_BOOT_X + 83, BUTTON_BOOT_Y + 33);
+    }
+    break;
   default:
     break;
   }
@@ -2804,15 +2812,15 @@ void Draw_Printing_Screen()
 void Draw_Print_ProgressBar()
 {
 // DWIN_ICON_Not_Filter_Show(ICON, ICON_Bar, 15, 98);
-// DWIN_Draw_Rectangle(1, BarFill_Color, 16 + _card_percent *240 /100, 98, 256, 110); //rock_20210917
+// DWIN_Draw_Rectangle(1, BarFill_Color, 16 + ui.get_progress_percent() *240 /100, 98, 256, 110); //rock_20210917
 #if ENABLED(DWIN_CREALITY_480_LCD)
-  DWIN_ICON_Not_Filter_Show(Background_ICON, Background_min + (_card_percent / PROGRESS_SCALE), 15, 98);
+  DWIN_ICON_Not_Filter_Show(Background_ICON, Background_min + ui.get_progress_percent(), 15, 98);
 
-  DWIN_Draw_IntValue(true, true, 0, font8x16, Percent_Color, Color_Bg_Black, 3, 109, 133, (_card_percent / PROGRESS_SCALE));
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Percent_Color, Color_Bg_Black, 3, 109, 133, ui.get_progress_percent());
   DWIN_Draw_String(false, false, font8x16, Percent_Color, Color_Bg_Black, 133 + 15, 133 - 3, F("%")); // Rock 20220728
 #elif ENABLED(DWIN_CREALITY_320_LCD)
-  DWIN_ICON_Not_Filter_Show(Background_ICON, BG_PRINTING_CIRCLE_MIN + (_card_percent / PROGRESS_SCALE), ICON_PERCENT_X, ICON_PERCENT_Y);
-  // DWIN_Draw_IntValue(true, true, 0, font8x16, Percent_Color, Color_Bg_Black, 3, NUM_PRECENT_X, NUM_PRECENT_Y, _card_percent);
+  DWIN_ICON_Not_Filter_Show(Background_ICON, BG_PRINTING_CIRCLE_MIN + ui.get_progress_percent(), ICON_PERCENT_X, ICON_PERCENT_Y);
+  // DWIN_Draw_IntValue(true, true, 0, font8x16, Percent_Color, Color_Bg_Black, 3, NUM_PRECENT_X, NUM_PRECENT_Y, ui.get_progress_percent());
   // DWIN_Draw_String(false, false, font8x16, Percent_Color, Color_Bg_Black, PRECENT_X, PRECENT_Y, F("%"));
 #endif
 }
@@ -2820,15 +2828,15 @@ void Draw_Print_ProgressBar()
 void Draw_Print_ProgressBarOcto(int progress)
 {
 // DWIN_ICON_Not_Filter_Show(ICON, ICON_Bar, 15, 98);
-// DWIN_Draw_Rectangle(1, BarFill_Color, 16 + _card_percent *240 /100, 98, 256, 110); //rock_20210917
+// DWIN_Draw_Rectangle(1, BarFill_Color, 16 + ui.get_progress_percent() *240 /100, 98, 256, 110); //rock_20210917
 #if ENABLED(DWIN_CREALITY_480_LCD)
   DWIN_ICON_Not_Filter_Show(Background_ICON, Background_min + progress, 15, 98);
 
-  DWIN_Draw_IntValue(true, true, 0, font8x16, Percent_Color, Color_Bg_Black, 3, 109, 133, (_card_percent / PROGRESS_SCALE));
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Percent_Color, Color_Bg_Black, 3, 109, 133, ui.get_progress_percent());
   DWIN_Draw_String(false, false, font8x16, Percent_Color, Color_Bg_Black, 133 + 15, 133 - 3, F("%")); // Rock 20220728
 #elif ENABLED(DWIN_CREALITY_320_LCD)
   DWIN_ICON_Not_Filter_Show(Background_ICON, BG_PRINTING_CIRCLE_MIN + progress, 125, 27);
-  // DWIN_Draw_IntValue(true, true, 0, font8x16, Percent_Color, Color_Bg_Black, 3, NUM_PRECENT_X, NUM_PRECENT_Y, _card_percent / PROGRESS_SCALE);
+  // DWIN_Draw_IntValue(true, true, 0, font8x16, Percent_Color, Color_Bg_Black, 3, NUM_PRECENT_X, NUM_PRECENT_Y, ui.get_progress_percent());
   // DWIN_Draw_String(false, false, font8x16, Percent_Color, Color_Bg_Black, PRECENT_X, PRECENT_Y, F("%"));
 #endif
 }
@@ -2899,15 +2907,15 @@ void Draw_Print_ProgressRemain()
     DWIN_Draw_String(false, false, font8x16, Color_White, Color_Bg_Black, 153, 131 + 3, F("------"));
     return;
   }
-  if (_remain_time < 360000) // Rock 20210903
+  if (ui.get_remaining_time() < 360000) // Rock 20210903
   {
     temp_flash_remain_time = false;
     if (temp_record_flag != temp_flash_remain_time)
     {
       Clear_Remain_Time();
     }
-    DWIN_Draw_IntValue(true, true, 1, font8x16, Color_White, Color_Bg_Black, 2, NUM_RAMAIN_TIME_X, NUM_RAMAIN_TIME_Y, _remain_time / 3600);
-    DWIN_Draw_IntValue(true, true, 1, font8x16, Color_White, Color_Bg_Black, 2, NUM_RAMAIN_TIME_X + 24, NUM_RAMAIN_TIME_Y, (_remain_time % 3600) / 60);
+    DWIN_Draw_IntValue(true, true, 1, font8x16, Color_White, Color_Bg_Black, 2, NUM_RAMAIN_TIME_X, NUM_RAMAIN_TIME_Y, ui.get_remaining_time() / 3600);
+    DWIN_Draw_IntValue(true, true, 1, font8x16, Color_White, Color_Bg_Black, 2, NUM_RAMAIN_TIME_X + 24, NUM_RAMAIN_TIME_Y, (ui.get_remaining_time() % 3600) / 60);
     DWIN_Draw_String(false, false, font8x16, Color_White, Color_Bg_Black, NUM_RAMAIN_TIME_X + 22, NUM_RAMAIN_TIME_Y - 3, F(":"));
   }
   else
@@ -3097,7 +3105,6 @@ void Goto_PrintProcess()
   DWIN_ICON_Show(ICON, ICON_PrintTime, ICON_PRINT_TIME_X, ICON_PRINT_TIME_Y);    // Print time icon
   DWIN_ICON_Show(ICON, ICON_RemainTime, ICON_RAMAIN_TIME_X, ICON_RAMAIN_TIME_Y); // Remaining time icon
 #endif
-  _card_percent = card.permyriadDone();
   Draw_Print_ProgressBar();     // Show current printing progress
   Draw_Print_ProgressElapsed(); // Show current time
   Draw_Print_ProgressRemain();  // Show remaining time
@@ -4564,18 +4571,17 @@ void octo_make_name_without_ext(char *dst, char *src, size_t maxlen = MENU_CHAR_
 void HMI_SDCardInit() { card.cdroot(); }
 
 void MarlinUI::refresh() { /* Nothing to see here */ }
-void MarlinUI::set_remaining_time (const uint32_t r) 
-{
-  SERIAL_ECHOLNPAIR("Setting new remaining time: ", r);
-  _remain_time = r;
-  if (model_information.pre_time[0] == 0) {
-    SERIAL_ECHOLNPAIR("Model information empty - set remaining time: ", r);
-    sprintf(model_information.pre_time, "%d", r);
-  } 
+void MarlinUI::kill_screen(PGM_P lcd_error, PGM_P lcd_component) {
+  Popup_window_boot(UnknownError);
+
+  // RED ALERT. RED ALERT.
+  #ifdef HAS_COLOR_LEDS
+    #ifdef NEOPIXEL_BKGD_INDEX_FIRST
+      neo.set_background_color(255, 0, 0, 0);
+      neo.show();
+    #endif
+  #endif
 }
-void MarlinUI::set_progress(const progress_t p) { _card_percent = _MIN(p, 100U * (PROGRESS_SCALE)); }
-uint32_t MarlinUI::get_remaining_time() { return _remain_time; }
-void MarlinUI::reset_remaining_time() { MarlinUI::set_remaining_time(0); }
 
 #define ICON_Folder ICON_More
 
@@ -5311,7 +5317,8 @@ static void Image_Preview_Information_Show(uint8_t ret)
   }
   else
   {
-    Display_Estimated_Time(atoi((char *)model_information.pre_time)); // Show remaining time
+    // Display_Estimated_Time(atoi((char *)model_information.pre_time)); // Show remaining time
+    Display_Estimated_Time(ui.get_remaining_time()); // Show remaining time
     DWIN_Draw_String(false, true, font8x16, Popup_Text_Color, Color_Bg_Black, WORD_LENTH_X + DATA_OFFSET_X, WORD_LENTH_Y + DATA_OFFSET_Y, &model_information.filament[0]);
     DWIN_Draw_String(false, true, font8x16, Popup_Text_Color, Color_Bg_Black, WORD_HIGH_X + DATA_OFFSET_X, WORD_HIGH_Y + DATA_OFFSET_Y, &model_information.height[0]);
   }
@@ -8856,23 +8863,6 @@ void Remove_card_window_check(void)
   }
 }
 
-duration_t estimate_remaining_time(const duration_t elapsed)
-{
-  SERIAL_ECHO("Estimating remaining time");
-  if (model_information.pre_time[0] != 0) {
-    SERIAL_ECHOLNPAIR("Total model time known. [remaining]: ", atoi((char *)model_information.pre_time) - elapsed.value, " [total]: ", atoi((char *)model_information.pre_time), " [elapsed]: ", elapsed.value);
-    return duration_t(atoi((char *)model_information.pre_time) - elapsed.value);
-  }
-  if (_card_percent < 1) {
-    SERIAL_ECHOLNPAIR("Total model time unknown. [card_percent]: ", _card_percent);
-    return duration_t(0);
-  }
-
-  // remaining time is (elapsed time / relative file position) - elapsed time
-  SERIAL_ECHOLNPAIR("Total model time unknown. [elapsed]: ", elapsed.value);
-  return duration_t((elapsed.value - dwin_heat_time) / ((_card_percent * 0.01f / PROGRESS_SCALE)) - (elapsed.value - dwin_heat_time));
-}
-
 void EachMomentUpdate()
 {
   static float card_Index = 0;
@@ -9015,8 +9005,9 @@ void EachMomentUpdate()
 
       // show percent bar and value
       // rock_20211122
-      _card_percent = 100 * PROGRESS_SCALE;
-      _remain_time = 0;
+      ui.set_progress_done();
+      ui.reset_remaining_time();
+      ui.total_time_reset();
       // Show remaining time
       Draw_Print_ProgressRemain();
       Draw_Print_ProgressBar();
@@ -9138,10 +9129,12 @@ void EachMomentUpdate()
     duration_t elapsed = print_job_timer.duration(); // print timer
     const uint16_t min = (elapsed.value % 3600) / 60;
     // Update progress bar
-    _card_percent = Cloud_Progress_Bar * PROGRESS_SCALE;
-    if (last_card_percent != _card_percent) // Update app progress bar
+    ui.set_progress(Cloud_Progress_Bar * PROGRESS_SCALE);
+    
+    const uint16_t progress = ui.get_progress_permyriad();
+    if (last_card_percent != progress) // Update app progress bar
     {
-      last_card_percent = _card_percent;
+      last_card_percent = progress;
       Draw_Print_ProgressBar();
       Draw_Print_ProgressRemain();
     }
@@ -9151,30 +9144,27 @@ void EachMomentUpdate()
       SERIAL_ECHOLNPAIR(" elapsed.value=: ", elapsed.value);
       last_Printtime = min;
       Draw_Print_ProgressElapsed();
-      //  _remain_time -= 60; //Remaining time minus 1 minute
-      // Draw_Print_ProgressRemain();
     }
-    if (_card_percent <= 1 && !flag)
+    if (progress <= 1 && !flag)
     {
       flag = true;
-      // _remain_time=0; //rock_20210831 solves the problem that the remaining time is not cleared.
-      // Draw_Print_ProgressRemain();
     }
   }
 
   if (card.isPrinting() && checkkey == PrintProcess)
   {
     // print process
-    const uint16_t card_pct = card.permyriadDone();
+    const uint16_t progress = ui.get_progress_permyriad();
+    // const uint16_t card_pct = card.permyriadDone();
     // Card percent=card.percent done();
     static uint16_t last_cardpercentValue = (100 * PROGRESS_SCALE) + 1;
-    if (last_cardpercentValue != card_pct)
+    if (last_cardpercentValue != progress)
     {
       // print percent
-      last_cardpercentValue = card_pct;
-      if (card_pct)
+      last_cardpercentValue = progress;
+      if (progress)
       {
-        _card_percent = card_pct;
+        // _card_percent = card_pct;
         Draw_Print_ProgressBar();
       }
     }
@@ -9192,10 +9182,11 @@ void EachMomentUpdate()
 
     // Estimate remaining time every 20 seconds
     static millis_t next_remain_time_update = 0;
-    _remain_time = estimate_remaining_time(elapsed).value;
-
-    next_remain_time_update += DWIN_REMAIN_TIME_UPDATE_INTERVAL;
-    Draw_Print_ProgressRemain();
+    if (ELAPSED(ms, next_remain_time_update))
+    {
+      next_remain_time_update += DWIN_REMAIN_TIME_UPDATE_INTERVAL;
+      Draw_Print_ProgressRemain();
+    }
   }
   else if (dwin_abort_flag && !HMI_flag.home_flag)
   {

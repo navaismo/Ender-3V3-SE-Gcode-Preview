@@ -54,7 +54,8 @@ void GcodeSuite::M79()
           if(recovery.info.sd_printing_flag == false)
           {
             // rock_20210831 Solve the problem of remaining time not being zero.
-            _remain_time=0;
+            ui.reset_remaining_time();
+            ui.total_time_reset();
             // Show the remaining time
             Draw_Print_ProgressRemain();
             Cloud_Progress_Bar=0;
@@ -129,7 +130,8 @@ void GcodeSuite::M79()
           {
             print_job_timer.stop();
             // rock_20210831 Solve the problem of remaining time not being clear.
-            _remain_time = 0;
+            ui.reset_remaining_time();
+            ui.total_time_reset();
             // Added a jump page to stop printing
             Draw_Print_ProgressRemain();
             // Cloud printing start flag bit
@@ -158,7 +160,8 @@ void GcodeSuite::M79()
           {
             print_job_timer.stop();
             //rock_20210831 Solve the problem of remaining time not being clear.
-            _remain_time = 0;
+            ui.reset_remaining_time();
+            ui.total_time_reset();
             Draw_Print_ProgressRemain();
             // Added a jump page to stop printing
             Goto_MainMenu();

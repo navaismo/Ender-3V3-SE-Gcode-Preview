@@ -1,4 +1,5 @@
 #include "lcd_rts.h"
+#include "../../marlinui.h"
 #include "../../../inc/MarlinConfigPre.h"
 #include "../../../MarlinCore.h"
 #include "../../../core/serial.h"
@@ -216,7 +217,8 @@ uint8_t read_gcode_model_information(const char* fileName)
   unsigned char buf_state = 0;
   uint8_t line_idx=0;
   
-  memset(model_information.pre_time, 0, sizeof(model_information.pre_time));
+  ui.reset_remaining_time();
+  ui.total_time_reset();
   memset(model_information.filament, 0, sizeof(model_information.filament));
   memset(model_information.height, 0, sizeof(model_information.height));
   
@@ -277,8 +279,7 @@ uint8_t read_gcode_model_information(const char* fileName)
         switch(k)
         {
           case 0: // "TIME"
-            memset(model_information.pre_time, 0, sizeof(model_information.pre_time));
-            strcpy(model_information.pre_time, value_buf);
+            ui.set_total_time(atoi(value_buf));
             break;
           case 1: // "Filament used"
             memset(model_information.filament, 0, sizeof(model_information.filament));           

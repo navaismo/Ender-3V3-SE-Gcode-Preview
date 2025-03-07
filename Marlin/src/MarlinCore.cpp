@@ -1701,17 +1701,8 @@ void loop()
   {
     idle();
     #if ENABLED(SDSUPPORT)
-      if (card.flag.abort_sd_printing)
-      {
-        abortSDPrinting();
-        // SERIAL_ECHOLN("M79 S4");
-      }
-      if (marlin_state == MF_SD_COMPLETE) 
-      {
-        _remain_time=0;                 //rock_20210728
-        finishSDPrinting();
-        _remain_time=0;                 //rock_20210728
-      }
+      if (card.flag.abort_sd_printing) abortSDPrinting();
+      if (marlin_state == MarlinState::MF_SD_COMPLETE) finishSDPrinting();
     #endif
 
     queue.advance();
@@ -1720,7 +1711,9 @@ void loop()
       Auto_Turnof_Function(); //息屏逻辑
     #endif
 
-    TERN_(HAS_TFT_LVGL_UI, printer_state_polling());    // APP_rock20210928
-    // TrySDCardPrintRecovery();  //尝试SD卡打印恢复 //rock_20230415
+    TERN_(HAS_TFT_LVGL_UI, printer_state_polling());
+
+    TERN_(MARLIN_TEST_BUILD, runPeriodicTests());
+    
   } while (ENABLED(__AVR__)); // Loop forever on slower (AVR) boards
 }

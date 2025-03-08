@@ -29,6 +29,7 @@
  */
 
 #include "MarlinCore.h"
+#include "../Configuration.h"
 
 #if ENABLED(MARLIN_DEV_MODE)
   #warning "WARNING! Disable MARLIN_DEV_MODE for the final build!"
@@ -1680,7 +1681,10 @@ uint8_t record_lcd_flag = 0;
 extern bool SD_Card_status;
 extern bool sd_printing_autopause;
 
+
 #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)
+uint8_t DIMM_SCREEN_BRIGHTNESS = 175;
+uint8_t MAX_SCREEN_BRIGHTNESS = 230;
 static void Auto_Turnof_Function()
 {
   // 按钮无动作超时
@@ -1688,7 +1692,7 @@ static void Auto_Turnof_Function()
   {
     if(!LCD_TURNOFF_FLAG)   // 没有熄灭屏
     {
-      DWIN_Backlight_SetLuminance(DESTORY_SCREEN_BRIGHTNESS);
+      DWIN_Backlight_SetLuminance(DIMM_SCREEN_BRIGHTNESS);
       LCD_TURNOFF_FLAG=true;  // 灭屏
     }
   }

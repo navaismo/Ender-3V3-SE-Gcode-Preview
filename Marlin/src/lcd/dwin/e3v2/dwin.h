@@ -87,9 +87,12 @@ enum processID : uint8_t {
   TemperatureID,
   Motion,
   Info,
+  Pstats,
   Tune,
   #if HAS_PREHEAT
     PLAPreheat,
+    TPUPreheat,
+    PETGPreheat,
     ABSPreheat,
   #endif
   MaxSpeed,
@@ -110,6 +113,9 @@ enum processID : uint8_t {
   CExtrude_Menu,
   custom_extrude_temp,
   custom_extrude_length,
+  Display_Menu,
+  Max_LCD_Bright,
+  Dimm_Bright,
   HomeOff,
   HomeOffX,
   HomeOffY,
@@ -664,6 +670,8 @@ typedef struct
     celsius_t E_Temp = 0;
     int16_t E_Flow = 0;
     int16_t Extrusion_Length = 0;
+    int16_t LCD_MaxBright  = MAX_SCREEN_BRIGHTNESS;
+    int16_t LCD_DimmBright = DIMM_SCREEN_BRIGHTNESS;
   #endif
   #if ENABLED(HAS_HEATED_BED)
     celsius_t Bed_Temp = 0;
@@ -841,6 +849,8 @@ void HMI_Tune();        // Adjust the menu
 void HMI_Confirm();  //需要点击确定的界面
 #if HAS_PREHEAT
   void HMI_PLAPreheatSetting(); // PLA warm-up setting
+  void HMI_TPUPreheatSetting(); // TPU warm-up setting
+  void HMI_PETGPreheatSetting(); // PETG warm-up setting
   void HMI_ABSPreheatSetting(); // ABS warm-up setting
 #endif
 

@@ -99,7 +99,7 @@ ENCODER_DiffState Encoder_ReceiveAnalyze() {
       if(LCD_TURNOFF_FLAG)
       {
         LCD_TURNOFF_FLAG=false;
-        DWIN_Backlight_SetLuminance(255);
+        DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
       }
     #endif
   }
@@ -111,7 +111,7 @@ ENCODER_DiffState Encoder_ReceiveAnalyze() {
       if(LCD_TURNOFF_FLAG)
       {
         LCD_TURNOFF_FLAG=false;
-        DWIN_Backlight_SetLuminance(255);
+        DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
       }
     #endif
   }
@@ -125,7 +125,7 @@ ENCODER_DiffState Encoder_ReceiveAnalyze() {
         if(LCD_TURNOFF_FLAG)
         {
           LCD_TURNOFF_FLAG=false;
-          DWIN_Backlight_SetLuminance(255);
+          DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
         }
       #endif
       static millis_t next_click_update_ms;

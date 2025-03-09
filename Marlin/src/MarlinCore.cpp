@@ -1658,6 +1658,7 @@ void setup()
   SETUP_LOG("setup() completed.");
   
   SERIAL_ECHOLNPAIR(" HMI_flag.language=: ", HMI_flag.language); // rock_20210909
+ 
 
 }
 

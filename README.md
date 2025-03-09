@@ -172,6 +172,14 @@ To preseve the state of the feature go to Menu Control --> Save settings.
 
 * Option to set the (Dimm)Brightness when the printer became inactive.
 
+* Option to set the Time Before dimming the screen.
+
+
+> [!IMPORTANT]
+>
+> - [x] To take effect after editing the desired values go to Control Menu and then Store Configuration.
+>
+
 
 <div align="center">
 

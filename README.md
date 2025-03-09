@@ -168,7 +168,7 @@ The submenu contains:
 * Option to mute or unmute the LCD when you press the Knob. From feature request in: [Issue #27](https://github.com/navaismo/Ender-3V3-SE/issues/27). Sometimes you want to be quiet. 
 To preseve the state of the feature go to Menu Control --> Save settings.
 
-* Option to set the Maximum Brightness during current runtime From feature request in [Issue #46](https://github.com/navaismo/Ender-3V3-SE/issues/46).
+* Option to set the Maximum Brightness during current runtime. From feature request in [Issue #46](https://github.com/navaismo/Ender-3V3-SE/issues/46).
 
 * Option to set the (Dimm)Brightness when the printer became inactive.
 

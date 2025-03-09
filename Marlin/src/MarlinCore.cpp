@@ -1683,12 +1683,13 @@ extern bool sd_printing_autopause;
 
 
 #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)
-uint8_t DIMM_SCREEN_BRIGHTNESS = 175;
-uint8_t MAX_SCREEN_BRIGHTNESS = 230;
+int16_t DIMM_SCREEN_BRIGHTNESS = 175;
+int16_t MAX_SCREEN_BRIGHTNESS = 230;
+int16_t TURN_OFF_TIME = 5;
 static void Auto_Turnof_Function()
 {
   // 按钮无动作超时
-  if(millis()-lMs_lcd_delay > TURN_OFF_TIME)
+  if(millis()-lMs_lcd_delay > (1000 * 60 * TURN_OFF_TIME))
   {
     if(!LCD_TURNOFF_FLAG)   // 没有熄灭屏
     {

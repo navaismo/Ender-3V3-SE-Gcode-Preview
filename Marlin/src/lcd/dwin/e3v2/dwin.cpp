@@ -6595,8 +6595,12 @@ void Draw_Display_Menu(){
   Draw_Menu_Line(3, ICON_Hardware_version);
   DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(3) + 3 , ((DIMM_SCREEN_BRIGHTNESS-164)*100)/66);
 
-}
+  // There's no graphical asset for this label, so we just write it as string
+  DWIN_Draw_Label(MBASE(4), F(" Mins Before Dimm"));
+  Draw_Menu_Line(4, ICON_PrintTime);
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(4) + 3 , TURN_OFF_TIME);
 
+}
 
 void HMI_Display_Menu(){
   ENCODER_DiffState encoder_diffState = get_encoder_state();
@@ -6606,7 +6610,7 @@ void HMI_Display_Menu(){
   // Avoid flicker by updating only the previous menu
   if (encoder_diffState == ENCODER_DIFF_CW)
   {
-    if (select_display.inc(1  + 3))
+    if (select_display.inc(1  + 4))
       Move_Highlight(1, select_display.now);
   }
   else if (encoder_diffState == ENCODER_DIFF_CCW)
@@ -6638,6 +6642,13 @@ void HMI_Display_Menu(){
       DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(3) + 3, ((DIMM_SCREEN_BRIGHTNESS-164)*100)/66);
       EncoderRate.enabled = true;
       break;
+    case 4: // Dim Time
+      checkkey = DimmTime;
+      //LIMIT(HMI_ValueStruct.LCD_DimmBright, 0, 100);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(4) + 3, HMI_ValueStruct.Dimm_Time);
+      EncoderRate.enabled = true;
+      break;  
+  
 
     }
   }
@@ -6651,17 +6662,17 @@ void HMI_LCDBright(){
 
   if (Apply_Encoder(encoder_diffState,  HMI_ValueStruct.LCD_MaxBright)) {
     EncoderRate.enabled = false;
-    LIMIT(HMI_ValueStruct.LCD_MaxBright, 0, 100);
+    LIMIT(HMI_ValueStruct.LCD_MaxBright, 5, 100);
     checkkey = Display_Menu;
     DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2)+3 , HMI_ValueStruct.LCD_MaxBright);
-    int luminance = 164 + ((HMI_ValueStruct.LCD_MaxBright * 66) / 100);
+    int16_t luminance = 164 + ((HMI_ValueStruct.LCD_MaxBright * 66) / 100);
     MAX_SCREEN_BRIGHTNESS = luminance;
     DWIN_Backlight_SetLuminance(luminance);
     //save to eeprom
     return;
   }
 
-  LIMIT(HMI_ValueStruct.LCD_MaxBright, 0, 100);
+  LIMIT(HMI_ValueStruct.LCD_MaxBright, 5, 100);
   DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2)+3 , HMI_ValueStruct.LCD_MaxBright);
 }
 
@@ -6676,7 +6687,7 @@ void HMI_LCDDimm(){
     LIMIT(HMI_ValueStruct.LCD_DimmBright, 0, 100);
     checkkey = Display_Menu;
     DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(3)+3 , HMI_ValueStruct.LCD_DimmBright);
-    int luminance = 164 + ((HMI_ValueStruct.LCD_DimmBright * 66) / 100);
+    int16_t luminance = 164 + ((HMI_ValueStruct.LCD_DimmBright * 66) / 100);
     DIMM_SCREEN_BRIGHTNESS = luminance;
     //save to eeprom
     return;
@@ -6684,6 +6695,25 @@ void HMI_LCDDimm(){
 
   LIMIT(HMI_ValueStruct.LCD_DimmBright, 0, 100);
   DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(3)+3 , HMI_ValueStruct.LCD_DimmBright);
+}
+
+void HMI_DimmTime(){
+  ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+
+  if (Apply_Encoder(encoder_diffState,  HMI_ValueStruct.Dimm_Time)) {
+    EncoderRate.enabled = false;
+    LIMIT(HMI_ValueStruct.Dimm_Time, 1, 60);
+    checkkey = Display_Menu;
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(4)+3 , HMI_ValueStruct.Dimm_Time);
+    TURN_OFF_TIME = HMI_ValueStruct.Dimm_Time;
+    //save to eeprom
+    return;
+  }
+
+  LIMIT(HMI_ValueStruct.Dimm_Time, 1, 60);
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(4)+3 , HMI_ValueStruct.Dimm_Time);
 }
 
 
@@ -10903,6 +10933,9 @@ void DWIN_HandleScreen()
   case Dimm_Bright:
     HMI_LCDDimm();
     break;    
+  case DimmTime:
+    HMI_DimmTime();
+    break;        
   case Step_value:
     HMI_StepXYZE();
     break;

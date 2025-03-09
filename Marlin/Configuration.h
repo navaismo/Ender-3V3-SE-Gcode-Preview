@@ -202,9 +202,10 @@
  * rock_20210728
  */
 #define ENABLE_AUTO_OFF_DISPLAY
-#if ENABLED(ENABLE_AUTO_OFF_DISPLAY)
-  #define TURN_OFF_TIME              1000 * 60 * 5  // turn-off time: 5min
-  #define DESTORY_SCREEN_BRIGHTNESS  5              // brightness 0x00-0xff:0
+  #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)
+  extern int16_t TURN_OFF_TIME;      // turn-off time: 5min
+  extern int16_t DIMM_SCREEN_BRIGHTNESS;             // brightness 0x00-0xff:0
+  extern int16_t MAX_SCREEN_BRIGHTNESS;              // brightness 0x00-0xff:0
 #endif
 
 /**
@@ -1846,6 +1847,18 @@
 #define PREHEAT_2_TEMP_BED     70
 #define PREHEAT_2_TEMP_CHAMBER 35
 #define PREHEAT_2_FAN_SPEED    0//255 // Value from 0 to 255
+
+#define PREHEAT_3_LABEL       "PETG"
+#define PREHEAT_3_TEMP_HOTEND 240
+#define PREHEAT_3_TEMP_BED     90
+#define PREHEAT_3_TEMP_CHAMBER 35
+#define PREHEAT_3_FAN_SPEED    0//255 // Value from 0 to 255
+
+#define PREHEAT_4_LABEL       "ABS"
+#define PREHEAT_4_TEMP_HOTEND 260
+#define PREHEAT_4_TEMP_BED    110
+#define PREHEAT_4_TEMP_CHAMBER 35
+#define PREHEAT_4_FAN_SPEED    0//255 // Value from 0 to 255
 
 /**
  * Nozzle Park

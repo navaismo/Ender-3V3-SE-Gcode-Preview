@@ -162,14 +162,20 @@ Enabled the option in Tune menu to modify the extrusion flow/rate of the printer
 
 <br>
 
-## * Added Mute/Unmute LCD Buzzer to the Prepare Menu:
-Added an Item in Prepare Menu to mute or unmute the LCD when you press the Knob. From feature request in: [Issue #27](https://github.com/navaismo/Ender-3V3-SE/issues/27). Sometimes you want to be quiet. 
-To preseve the state of the feature go to Menu Control --> Save settings. 
+## * Added a Display Settings subMenu to the Prepare Menu:
+The submenu contains:
+
+* Option to mute or unmute the LCD when you press the Knob. From feature request in: [Issue #27](https://github.com/navaismo/Ender-3V3-SE/issues/27). Sometimes you want to be quiet. 
+To preseve the state of the feature go to Menu Control --> Save settings.
+
+* Option to set the Maximum Brightness during current runtime. From feature request in [Issue #46](https://github.com/navaismo/Ender-3V3-SE/issues/46).
+
+* Option to set the (Dimm)Brightness when the printer became inactive.
 
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/eYiucxl.jpeg" align="center" height="576" width="440" ></a>
+<a href=""><img src="https://i.imgur.com/mY5P9v9.jpeg" align="center" height="576" width="840" ></a>
 
 </div>
 
@@ -229,6 +235,31 @@ Added a custom Extrusion Menu under Prepare Menu from feature request on [Issue#
 <a href=""><img src="https://i.imgur.com/fY8wWJA.jpeg" align="center" height="976" width="1140" ></a>
 
 </div>
+
+
+<br>
+
+## * Printer Statistics:
+Added Submenu under Control Menu to show the Print Stats gather by Marlin. From feature request on [Issue #48](https://github.com/navaismo/Ender-3V3-SE/issues/48)
+
+<div align="center">
+
+<a href=""><img src="https://i.imgur.com/3irzF4E.jpeg" align="center" height="576" width="940" ></a>
+
+</div>
+
+<br>
+
+## * PETG/ABS Preheat Settings:
+Added options for preheat new Materials: PETG and ABS under Control and Pepare Menus. From feature request on [Issue #49](https://github.com/navaismo/Ender-3V3-SE/issues/49)
+
+<div align="center">
+
+<a href=""><img src="https://i.imgur.com/Q051ckp.jpeg" align="center" height="976" width="940" ></a>
+
+</div>
+
+<br>
 
 ----------
 

@@ -29,6 +29,7 @@
  */
 
 #include "MarlinCore.h"
+#include "../Configuration.h"
 
 #if ENABLED(MARLIN_DEV_MODE)
   #warning "WARNING! Disable MARLIN_DEV_MODE for the final build!"
@@ -1680,15 +1681,19 @@ uint8_t record_lcd_flag = 0;
 extern bool SD_Card_status;
 extern bool sd_printing_autopause;
 
+
 #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)
+int16_t DIMM_SCREEN_BRIGHTNESS = 175;
+int16_t MAX_SCREEN_BRIGHTNESS = 230;
+int16_t TURN_OFF_TIME = 5;
 static void Auto_Turnof_Function()
 {
   // 按钮无动作超时
-  if(millis()-lMs_lcd_delay > TURN_OFF_TIME)
+  if(millis()-lMs_lcd_delay > (1000 * 60 * TURN_OFF_TIME))
   {
     if(!LCD_TURNOFF_FLAG)   // 没有熄灭屏
     {
-      DWIN_Backlight_SetLuminance(DESTORY_SCREEN_BRIGHTNESS);
+      DWIN_Backlight_SetLuminance(DIMM_SCREEN_BRIGHTNESS);
       LCD_TURNOFF_FLAG=true;  // 灭屏
     }
   }
@@ -1701,17 +1706,8 @@ void loop()
   {
     idle();
     #if ENABLED(SDSUPPORT)
-      if (card.flag.abort_sd_printing)
-      {
-        abortSDPrinting();
-        // SERIAL_ECHOLN("M79 S4");
-      }
-      if (marlin_state == MF_SD_COMPLETE) 
-      {
-        _remain_time=0;                 //rock_20210728
-        finishSDPrinting();
-        _remain_time=0;                 //rock_20210728
-      }
+      if (card.flag.abort_sd_printing) abortSDPrinting();
+      if (marlin_state == MarlinState::MF_SD_COMPLETE) finishSDPrinting();
     #endif
 
     queue.advance();
@@ -1720,7 +1716,9 @@ void loop()
       Auto_Turnof_Function(); //息屏逻辑
     #endif
 
-    TERN_(HAS_TFT_LVGL_UI, printer_state_polling());    // APP_rock20210928
-    // TrySDCardPrintRecovery();  //尝试SD卡打印恢复 //rock_20230415
+    TERN_(HAS_TFT_LVGL_UI, printer_state_polling());
+
+    TERN_(MARLIN_TEST_BUILD, runPeriodicTests());
+    
   } while (ENABLED(__AVR__)); // Loop forever on slower (AVR) boards
 }

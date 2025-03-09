@@ -36,7 +36,7 @@
  */
 
 // Change EEPROM version if the structure changes
-#define EEPROM_VERSION "V84"
+#define EEPROM_VERSION "V86"
 #define EEPROM_OFFSET 100
 
 // Check the integrity of data offsets.
@@ -495,6 +495,13 @@ typedef struct SettingsDataStruct {
   #if ENABLED(DWIN_LCD_BEEP)
     uint8_t toggleLCDBeep;
   #endif     
+
+  // LCD Brightness settings
+  #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)
+   uint8_t lcdtime;                
+   int16_t lcddimm;             
+   int16_t lcdbright;              
+  #endif
 
 //  uint16_t Auto_PID_Value_set1;
 //  uint16_t Auto_PID_Value_set2;
@@ -1484,6 +1491,19 @@ void MarlinSettings::postprocess() {
     }
     #endif
 
+     //Save LCD Brightness settings
+     #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)
+     {
+       uint8_t sleep = TURN_OFF_TIME;                
+       int16_t dimmBright = DIMM_SCREEN_BRIGHTNESS;
+       int16_t bright = MAX_SCREEN_BRIGHTNESS;
+       EEPROM_WRITE(sleep);              
+       EEPROM_WRITE(dimmBright);         
+       EEPROM_WRITE(bright);             
+ 
+     }             
+     #endif
+
     // Auto_PID_Value_set[1]=HMI_ValueStruct.Auto_PID_Value[1];
     // Auto_PID_Value_set[2]=HMI_ValueStruct.Auto_PID_Value[2];
     // EEPROM_WRITE(Auto_PID_Value_set[1]);
@@ -2438,6 +2458,22 @@ void MarlinSettings::postprocess() {
         toggle_LCDBeep = (beep > 0) ? 1 : 0;
       }
       #endif
+
+    //Read LCD Brightness settings
+    #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)
+    {
+      uint8_t sleep;                 
+      int16_t dimmBright;
+      int16_t bright;
+      EEPROM_READ(sleep);
+      TURN_OFF_TIME = (sleep > 60) ? 5 : sleep;              
+      EEPROM_READ(dimmBright);
+      DIMM_SCREEN_BRIGHTNESS = (dimmBright > 175) ? 175  : dimmBright;         
+      EEPROM_READ(bright);             
+      MAX_SCREEN_BRIGHTNESS = ( bright > 230) ? 230 : bright;
+
+    }             
+    #endif
       //  EEPROM_READ(Auto_PID_Value_set[1]);
       //  if(!Auto_PID_Value_set[1])Auto_PID_Value_set[1]=100;
       //  HMI_ValueStruct.Auto_PID_Value[1]=Auto_PID_Value_set[1];
@@ -4042,6 +4078,17 @@ void MarlinSettings::reset() {
       CONFIG_ECHO_HEADING("UI Language:");
       SERIAL_ECHO_MSG("  M414 S", ui.language);
     #endif
+
+    #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)  
+      SERIAL_ECHOLN("DISPLAY Settings:");
+      SERIAL_ECHOLNPAIR("Buzzer ON/OFF: ", toggle_LCDBeep);
+      SERIAL_ECHOLNPAIR("MAX BRIGHTNESS: ", MAX_SCREEN_BRIGHTNESS);
+      SERIAL_ECHOLNPAIR("DIMM BRIGHTNESS: ", DIMM_SCREEN_BRIGHTNESS);
+      SERIAL_ECHOLNPAIR("AUTO OFF TIME: ", TURN_OFF_TIME);
+    #endif
+
+
+
   }
 
 #endif // !DISABLE_M503

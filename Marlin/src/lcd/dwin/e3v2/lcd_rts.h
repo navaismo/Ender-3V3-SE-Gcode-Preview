@@ -56,7 +56,6 @@ enum{
 #define _MAX_LINES_TO_PARSE 50
 typedef struct _model_information_t
 {
-  char pre_time[15]; // 预定时间
   char filament[15];
   char height[15];
   char MINX[15];

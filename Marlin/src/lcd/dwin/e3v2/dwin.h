@@ -85,9 +85,12 @@ enum processID : uint8_t {
   TemperatureID,
   Motion,
   Info,
+  Pstats,
   Tune,
   #if HAS_PREHEAT
     PLAPreheat,
+    TPUPreheat,
+    PETGPreheat,
     ABSPreheat,
   #endif
   MaxSpeed,
@@ -108,6 +111,10 @@ enum processID : uint8_t {
   CExtrude_Menu,
   custom_extrude_temp,
   custom_extrude_length,
+  Display_Menu,
+  Max_LCD_Bright,
+  Dimm_Bright,
+  DimmTime,
   HomeOff,
   HomeOffX,
   HomeOffY,
@@ -213,6 +220,7 @@ enum DWIN_Poupe{
   Level_faild_QR, //调平失败请扫描二维码，获取解决方案
   Boot_undone,  //开机引导未完成
   CRTouch_err,  //CRTouch异常，
+  UnknownError, // Used for future MarlinUI integration
 };
 extern enum DC_language current_language;
 // Picture ID
@@ -612,7 +620,7 @@ extern enum DC_language current_language;
  * 3-.0：The font size, 0x00-0x09, corresponds to the font size below:
  * 0x00=6*12   0x01=8*16   0x02=10*20  0x03=12*24  0x04=14*28
  * 0x05=16*32  0x06=20*40  0x07=24*48  0x08=28*56  0x09=32*64
- */
+ **/
 #define font6x12  0x00
 #define font8x16  0x01
 #define font10x20 0x02
@@ -667,6 +675,9 @@ typedef struct
     celsius_t E_Temp = 0;
     int16_t E_Flow = 0;
     int16_t Extrusion_Length = 0;
+    int16_t LCD_MaxBright  = MAX_SCREEN_BRIGHTNESS;
+    int16_t LCD_DimmBright = DIMM_SCREEN_BRIGHTNESS;
+    uint8_t Dimm_Time = TURN_OFF_TIME;
   #endif
   #if ENABLED(HAS_HEATED_BED)
     celsius_t Bed_Temp = 0;
@@ -757,7 +768,6 @@ typedef struct {
 
 extern HMI_value_t HMI_ValueStruct;
 extern HMI_Flag_t HMI_flag;
-extern uint32_t _remain_time;   // rock_20210830
 extern bool end_flag; //防止反复刷新曲线完成指令
 // Show ICO
 void ICON_Print(bool show);
@@ -845,6 +855,8 @@ void HMI_Tune();        // Adjust the menu
 void HMI_Confirm();  //需要点击确定的界面
 #if HAS_PREHEAT
   void HMI_PLAPreheatSetting(); // PLA warm-up setting
+  void HMI_TPUPreheatSetting(); // TPU warm-up setting
+  void HMI_PETGPreheatSetting(); // PETG warm-up setting
   void HMI_ABSPreheatSetting(); // ABS warm-up setting
 #endif
 

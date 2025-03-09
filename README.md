@@ -172,10 +172,14 @@ To preseve the state of the feature go to Menu Control --> Save settings.
 
 * Option to set the (Dimm)Brightness when the printer became inactive.
 
+* Option to set the Time Before dimming the screen.
+
+* Option to save settings in EEPROM.
+
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/mY5P9v9.jpeg" align="center" height="576" width="840" ></a>
+<a href=""><img src="https://i.imgur.com/YUpHKl2.jpeg" align="center" height="676" width="440" ></a>
 
 </div>
 

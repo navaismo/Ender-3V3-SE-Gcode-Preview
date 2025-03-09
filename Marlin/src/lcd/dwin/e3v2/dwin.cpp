@@ -2226,7 +2226,7 @@ void Octo_Draw_Menu_Icon(const uint8_t line, const uint8_t icon) {
 }
 
 void Octo_Draw_More_Icon(uint8_t line) {
-    DWIN_ICON_Show(ICON, ICON_More, 208, OCTO_MBASE(line) - 3);
+    DWIN_ICON_Show(ICON, ICON_More, 208,  OCTO_MBASE(line) - 3);
   }
 
 void Octo_Draw_Menu_Line(const uint8_t line, const uint8_t icon = 0, const char *const label = nullptr, bool more = false) {
@@ -2236,6 +2236,8 @@ void Octo_Draw_Menu_Line(const uint8_t line, const uint8_t icon = 0, const char 
     Octo_Draw_Menu_Icon(line, icon);
   if (more)
     Octo_Draw_More_Icon(line);
+
+    DWIN_Draw_Line(Line_Color, 16, OCTO_MBASE(line) + 26, BLUELINE_X, OCTO_MBASE(line) + 26);  
 }
 
 
@@ -2308,6 +2310,7 @@ void Octo_Item_Tune_Zoffset(const uint8_t row) {
 
 
 void Draw_OctoTune_Menu() {
+  Draw_OctoTitle(vvfilename);  
   Clear_Octo_Area();
   HMI_flag.Refresh_bottom_flag = true;
   const int16_t Oscroll = OctoMROWS - octo_index_tune; // Scrolled-up lines
@@ -3537,6 +3540,7 @@ void Goto_PrintProcess()
 
 void Goto_MainMenu()
 {
+  DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
   updateOctoData = false;
   initializeImageMap();
   clear_UpperArea = 0;
@@ -6807,6 +6811,8 @@ void Draw_Display_Menu(){
   Draw_Menu_Line(4, ICON_PrintTime);
   DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(4) + 3 , TURN_OFF_TIME);
 
+  DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Store, 60, MBASE(5) + JPN_OFFSET);
+  Draw_Menu_Line(5, ICON_WriteEEPROM); 
 }
 
 
@@ -6818,7 +6824,7 @@ void HMI_Display_Menu(){
   // Avoid flicker by updating only the previous menu
   if (encoder_diffState == ENCODER_DIFF_CW)
   {
-    if (select_display.inc(1  + 4))
+    if (select_display.inc(1  + 5))
       Move_Highlight(1, select_display.now);
   }
   else if (encoder_diffState == ENCODER_DIFF_CCW)
@@ -6855,7 +6861,9 @@ void HMI_Display_Menu(){
       //LIMIT(HMI_ValueStruct.LCD_DimmBright, 0, 100);
       DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(4) + 3, HMI_ValueStruct.Dimm_Time);
       EncoderRate.enabled = true;
-      break;  
+      break; 
+    case 5:
+      settings.save();   
   
 
     }
@@ -7958,13 +7966,17 @@ void HMI_Temperature()
           DWIN_ICON_Show(ICON, ICON_More, 208, MBASE(MROWS) - 3);
           break;
         case TEMP_CASE_ABS:
+          DWIN_Draw_Rectangle(1, Color_Bg_Black, 60, MBASE(MROWS) - 8, 240, MBASE(6) - 12); // Clear the last line
           Item_Temp_ABS(MROWS);
           Draw_Menu_Icon(MROWS, ICON_SetBedTemp);
           DWIN_ICON_Show(ICON, ICON_More, 208, MBASE(MROWS) - 3);
           break;  
         // Manual pid setting
         case TEMP_CASE_HM_PID:
+          DWIN_Draw_Rectangle(1, Color_Bg_Black, 60, MBASE(MROWS) - 8, 240, MBASE(6) - 12); // Clear the last line
+        
           Draw_Menu_Icon(MROWS, ICON_HM_PID);
+          Draw_Menu_Line(MROWS, ICON_HM_PID);
           if (HMI_flag.language < Language_Max)
           {
 #if ENABLED(DWIN_CREALITY_480_LCD)
@@ -7975,7 +7987,10 @@ void HMI_Temperature()
           }
           break;
         case TEMP_CASE_Auto_PID: // Automatic pid setting
+          DWIN_Draw_Rectangle(1, Color_Bg_Black, 60, MBASE(MROWS) - 8, 240, MBASE(6) - 12); // Clear the last line
+        
           Draw_Menu_Icon(MROWS, ICON_Auto_PID);
+          Draw_Menu_Line(MROWS, ICON_Auto_PID);
           if (HMI_flag.language < Language_Max)
           {
 #if ENABLED(DWIN_CREALITY_480_LCD)
@@ -8004,36 +8019,54 @@ void HMI_Temperature()
       if (select_temp.now < index_temp - MROWS)
       {
         index_temp--;
+        
         Scroll_Menu(DWIN_SCROLL_DOWN);
         if (index_temp == MROWS)
         {
           Draw_Back_First();
+          Show_Temp_Default_Data(1, 1);
+          Show_Temp_Default_Data(2, 2);
+          Show_Temp_Default_Data(3, 3);
+          Draw_More_Icon(4);
+        }
+        else if (index_temp == 5){
+          Show_Temp_Default_Data(1, 1);
+          Show_Temp_Default_Data(2, 2);
+          Show_Temp_Default_Data(3, 3);
+          Draw_More_Icon(4);
+
         }
         else if (index_temp == 6)
         {
           if (HMI_flag.language < Language_Max)
           {
+            DWIN_Draw_Rectangle(1, Color_Bg_Black, 200, MBASE(0) - 8, 240, MBASE(0 + 2) - 12); // Clear previos line
             Draw_Menu_Line(0, ICON_SetEndTemp);
             DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Hotend, 42, MBASE(0) + JPN_OFFSET);
-            Show_Temp_Default_Data(0, 0);
+            Show_Temp_Default_Data(0, 1);
+            Show_Temp_Default_Data(1, 2);
+            Show_Temp_Default_Data(2, 3);
           }
         }
         else if (index_temp == 7)
         {
           if (HMI_flag.language < Language_Max)
           {
+            DWIN_Draw_Rectangle(1, Color_Bg_Black, 200, MBASE(0) - 8, 240, MBASE(0 + 2) - 12); // Clear previos line
             Draw_Menu_Line(0, ICON_SetBedTemp);
             DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Bedend, 42, MBASE(0) + JPN_OFFSET);
-            Show_Temp_Default_Data(0, 0);
+            Show_Temp_Default_Data(0, 2);
+            Show_Temp_Default_Data(1, 3);
           }
         }
         else if (index_temp == 8)
         {
           if (HMI_flag.language < Language_Max)
           {
+            DWIN_Draw_Rectangle(1, Color_Bg_Black, 200, MBASE(0) - 8, 240, MBASE(0 + 2) - 12); // Clear previos line
             Draw_Menu_Line(0, ICON_FanSpeed);
             DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Fan, 42, MBASE(0) + JPN_OFFSET);
-            Show_Temp_Default_Data(0, 0);
+            Show_Temp_Default_Data(0, 3);
           }
         }else if (index_temp == 9)
         {

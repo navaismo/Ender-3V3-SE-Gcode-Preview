@@ -54,6 +54,8 @@ void Encoder_Configuration();
 
 #if ENABLED(DWIN_LCD_BEEP)
  extern uint8_t toggle_LCDBeep;
+ extern bool restore_brightness_active; 
+ void restore_brightness();
 #endif
 
 // Analyze encoder value and return state

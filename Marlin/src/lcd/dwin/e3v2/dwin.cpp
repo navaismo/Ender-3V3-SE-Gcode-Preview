@@ -3597,6 +3597,12 @@ void HMI_ETemp()
     case -3:
       temp_line = PREHEAT_CASE_TEMP;
       break;
+    case -7:
+      temp_line = PREHEAT_CASE_TEMP;
+      break;
+    case -8:
+      temp_line = PREHEAT_CASE_TEMP;
+      break;    
     default:
       temp_line = TUNE_CASE_TEMP + MROWS - index_tune;
     }
@@ -3615,9 +3621,23 @@ void HMI_ETemp()
       }
       else if (HMI_ValueStruct.show_mode == -3)
       {
-        checkkey = ABSPreheat;
+        checkkey = TPUPreheat;
         ui.material_preset[1].hotend_temp = HMI_ValueStruct.E_Temp;
         DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(temp_line) + TEMP_SET_OFFSET, ui.material_preset[1].hotend_temp);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -7)
+      {
+        checkkey = PETGPreheat;
+        ui.material_preset[2].hotend_temp = HMI_ValueStruct.E_Temp;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(temp_line) + TEMP_SET_OFFSET, ui.material_preset[2].hotend_temp);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -8)
+      {
+        checkkey = ABSPreheat;
+        ui.material_preset[3].hotend_temp = HMI_ValueStruct.E_Temp;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(temp_line) + TEMP_SET_OFFSET, ui.material_preset[3].hotend_temp);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -1) // Temperature
@@ -3667,6 +3687,12 @@ void HMI_O9000ETemp()
     case -3:
       temp_line = PREHEAT_CASE_TEMP;
       break;
+    case -7:
+      temp_line = PREHEAT_CASE_TEMP;
+      break;
+    case -8:
+      temp_line = PREHEAT_CASE_TEMP;
+      break;      
     default:
       temp_line = TUNE_CASE_TEMP + MROWS - index_tune;
     }
@@ -3685,9 +3711,23 @@ void HMI_O9000ETemp()
       }
       else if (HMI_ValueStruct.show_mode == -3)
       {
-        checkkey = ABSPreheat;
+        checkkey = TPUPreheat;
         ui.material_preset[1].hotend_temp = HMI_ValueStruct.E_Temp;
         DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(temp_line) + TEMP_SET_OFFSET, ui.material_preset[1].hotend_temp);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -7)
+      {
+        checkkey = PETGPreheat;
+        ui.material_preset[2].hotend_temp = HMI_ValueStruct.E_Temp;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(temp_line) + TEMP_SET_OFFSET, ui.material_preset[2].hotend_temp);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -8)
+      {
+        checkkey = ABSPreheat;
+        ui.material_preset[3].hotend_temp = HMI_ValueStruct.E_Temp;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(temp_line) + TEMP_SET_OFFSET, ui.material_preset[3].hotend_temp);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -1) // Temperature
@@ -3797,6 +3837,12 @@ void HMI_BedTemp()
     case -3:
       bed_line = PREHEAT_CASE_BED;
       break;
+    case -7:
+      bed_line = PREHEAT_CASE_BED;
+      break;
+    case -8:
+      bed_line = PREHEAT_CASE_BED;
+      break;       
     default:
       bed_line = TUNE_CASE_BED + MROWS - index_tune;
     }
@@ -3816,9 +3862,23 @@ void HMI_BedTemp()
       }
       else if (HMI_ValueStruct.show_mode == -3)
       {
-        checkkey = ABSPreheat;
+        checkkey = TPUPreheat;
         ui.material_preset[1].bed_temp = HMI_ValueStruct.Bed_Temp;
         DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(bed_line) + TEMP_SET_OFFSET, ui.material_preset[1].bed_temp);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -7)
+      {
+        checkkey = PETGPreheat;
+        ui.material_preset[2].bed_temp = HMI_ValueStruct.Bed_Temp;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(bed_line) + TEMP_SET_OFFSET, ui.material_preset[2].bed_temp);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -8)
+      {
+        checkkey = ABSPreheat;
+        ui.material_preset[3].bed_temp = HMI_ValueStruct.Bed_Temp;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(bed_line) + TEMP_SET_OFFSET, ui.material_preset[3].bed_temp);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -1)
@@ -3872,6 +3932,12 @@ void HMI_O9000BedTemp()
     case -3:
       bed_line = PREHEAT_CASE_BED;
       break;
+    case -7:
+      bed_line = PREHEAT_CASE_BED;
+      break;
+    case -8:
+      bed_line = PREHEAT_CASE_BED;
+      break;     
     default:
       bed_line = TUNE_CASE_BED + MROWS - index_tune;
     }
@@ -3891,9 +3957,23 @@ void HMI_O9000BedTemp()
       }
       else if (HMI_ValueStruct.show_mode == -3)
       {
-        checkkey = ABSPreheat;
+        checkkey = TPUPreheat;
         ui.material_preset[1].bed_temp = HMI_ValueStruct.Bed_Temp;
         DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(bed_line) + TEMP_SET_OFFSET, ui.material_preset[1].bed_temp);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -7)
+      {
+        checkkey = PETGPreheat;
+        ui.material_preset[2].bed_temp = HMI_ValueStruct.Bed_Temp;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(bed_line) + TEMP_SET_OFFSET, ui.material_preset[2].bed_temp);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -8)
+      {
+        checkkey = ABSPreheat;
+        ui.material_preset[3].bed_temp = HMI_ValueStruct.Bed_Temp;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(bed_line) + TEMP_SET_OFFSET, ui.material_preset[3].bed_temp);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -1)
@@ -3950,6 +4030,12 @@ void HMI_FanSpeed()
     case -3:
       fan_line = PREHEAT_CASE_FAN;
       break;
+    case -7:
+      fan_line = PREHEAT_CASE_FAN;
+      break;
+    case -8:
+      fan_line = PREHEAT_CASE_FAN;
+      break;       
     // case -4: fan_line = TEMP_CASE_FAN + MROWS -index_temp;break;
     default:
       fan_line = TUNE_CASE_FAN + MROWS - index_tune;
@@ -3967,9 +4053,23 @@ void HMI_FanSpeed()
       }
       else if (HMI_ValueStruct.show_mode == -3)
       {
-        checkkey = ABSPreheat;
+        checkkey = TPUPreheat;
         ui.material_preset[1].fan_speed = HMI_ValueStruct.Fan_speed;
         DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(fan_line) + TEMP_SET_OFFSET, ui.material_preset[1].fan_speed);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -7)
+      {
+        checkkey = PETGPreheat;
+        ui.material_preset[2].fan_speed = HMI_ValueStruct.Fan_speed;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(fan_line) + TEMP_SET_OFFSET, ui.material_preset[2].fan_speed);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -8)
+      {
+        checkkey = ABSPreheat;
+        ui.material_preset[3].fan_speed = HMI_ValueStruct.Fan_speed;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(fan_line) + TEMP_SET_OFFSET, ui.material_preset[3].fan_speed);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -1)
@@ -4017,6 +4117,12 @@ void HMI_O9000FanSpeed()
     case -3:
       fan_line = PREHEAT_CASE_FAN;
       break;
+    case -7:
+      fan_line = PREHEAT_CASE_FAN;
+      break;
+    case -8:
+      fan_line = PREHEAT_CASE_FAN;
+      break;      
     // case -4: fan_line = TEMP_CASE_FAN + MROWS -index_temp;break;
     default:
       fan_line = TUNE_CASE_FAN + MROWS - index_tune;
@@ -4034,9 +4140,23 @@ void HMI_O9000FanSpeed()
       }
       else if (HMI_ValueStruct.show_mode == -3)
       {
-        checkkey = ABSPreheat;
+        checkkey = TPUPreheat;
         ui.material_preset[1].fan_speed = HMI_ValueStruct.Fan_speed;
         DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(fan_line) + TEMP_SET_OFFSET, ui.material_preset[1].fan_speed);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -7)
+      {
+        checkkey = PETGPreheat;
+        ui.material_preset[2].fan_speed = HMI_ValueStruct.Fan_speed;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(fan_line) + TEMP_SET_OFFSET, ui.material_preset[2].fan_speed);
+        return;
+      }
+      else if (HMI_ValueStruct.show_mode == -8)
+      {
+        checkkey = ABSPreheat;
+        ui.material_preset[3].fan_speed = HMI_ValueStruct.Fan_speed;
+        DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(fan_line) + TEMP_SET_OFFSET, ui.material_preset[3].fan_speed);
         return;
       }
       else if (HMI_ValueStruct.show_mode == -1)
@@ -5246,16 +5366,16 @@ void Draw_PStats_Menu(){
   // Total Prints
    DWIN_Draw_Small_Label(MBASE(1), F("Total Prints"));
   Draw_Menu_Line(1, ICON_Info);
-  DWIN_Draw_IntValue(true, true, 0, font6x12, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(1) + 3 , totalPrints);
+  DWIN_Draw_IntValue(true, true, 0, font6x12, Color_White, Color_Bg_Black, 6, 152, MBASE(1) + 3 , totalPrints);
   // Completed Prints
-  DWIN_Draw_Small_Label(MBASE(2), F("Completed Prints"));
+  DWIN_Draw_Small_Label(MBASE(2), F("Completed"));
   Draw_Menu_Line(2, ICON_Info);
-  DWIN_Draw_IntValue(true, true, 0, font6x12, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(2) + 3 , finishedPrints);
+  DWIN_Draw_IntValue(true, true, 0, font6x12, Color_White, Color_Bg_Black, 6, 152, MBASE(2) + 3 , finishedPrints);
 
   // Failed Prints
-  DWIN_Draw_Small_Label(MBASE(3), F("Failed Prints"));
+  DWIN_Draw_Small_Label(MBASE(3), F("Failed"));
   Draw_Menu_Line(3, ICON_Info);
-  DWIN_Draw_IntValue(true, true, 0, font6x12, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(3) + 3 , failedPrints);
+  DWIN_Draw_IntValue(true, true, 0, font6x12, Color_White, Color_Bg_Black, 6, 152, MBASE(3) + 3 , failedPrints);
 
   // Total Time
   DWIN_Draw_Small_Label(MBASE(4), F("Total Time"));
@@ -7153,7 +7273,7 @@ void HMI_Prepare()
       Popup_Window_Home();
       gcode.process_subcommands_now_P(PSTR("G28")); //home
       delay(200);
-      gcode.process_subcommands_now_P(PSTR("G1 Z35 F300")); // raise Z
+      gcode.process_subcommands_now_P(PSTR("G0 X-40 Z35 F7000")); // raise Z
       checkkey = CExtrude_Menu;
       select_cextr.reset();
       Draw_CExtrude_Menu();
@@ -8041,7 +8161,7 @@ void HMI_Temperature()
      { // PETG preheat setting
        checkkey = PETGPreheat;
        select_PETG.reset();
-       HMI_ValueStruct.show_mode = -3;
+       HMI_ValueStruct.show_mode = -7;
        Clear_Main_Window();
        Draw_Mid_Status_Area(true);
        HMI_flag.Refresh_bottom_flag = false; // Flag refresh bottom parameter
@@ -8092,7 +8212,7 @@ void HMI_Temperature()
     { // ABS preheat setting
       checkkey = ABSPreheat;
       select_ABS.reset();
-      HMI_ValueStruct.show_mode = -3;
+      HMI_ValueStruct.show_mode = -8;
       Clear_Main_Window();
       Draw_Mid_Status_Area(true);
       HMI_flag.Refresh_bottom_flag = false; // Flag refresh bottom parameter

@@ -65,6 +65,30 @@ void Encoder_tick() {
   #endif
 }
 
+
+// restore brightness smoothly
+void restore_brightness() {
+  const uint16_t step_delay = 10; // Smaller delay for smoother animation
+  const uint8_t steps = 15;       // More steps for finer control
+
+  int16_t current_brightness = DIMM_SCREEN_BRIGHTNESS;
+  int16_t brightness_range = MAX_SCREEN_BRIGHTNESS - DIMM_SCREEN_BRIGHTNESS;
+  int16_t step_size = brightness_range / steps; // Automatically adapt to range
+
+  // Make sure step size is at least 1 to prevent infinite loop
+  if (step_size < 1) step_size = 1;
+
+  // Gradually increase brightness
+  while (current_brightness < MAX_SCREEN_BRIGHTNESS) {
+    current_brightness += step_size;
+    if (current_brightness > MAX_SCREEN_BRIGHTNESS) 
+      current_brightness = MAX_SCREEN_BRIGHTNESS; // Cap to max value
+    DWIN_Backlight_SetLuminance(current_brightness);
+    delay(step_delay); // Delay between steps
+  }
+}
+
+
 // Encoder initialization
 void Encoder_Configuration() {
   #if BUTTON_EXISTS(EN1)
@@ -99,7 +123,8 @@ ENCODER_DiffState Encoder_ReceiveAnalyze() {
       if(LCD_TURNOFF_FLAG)
       {
         LCD_TURNOFF_FLAG=false;
-        DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
+        restore_brightness();
+        //DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
       }
     #endif
   }
@@ -111,7 +136,8 @@ ENCODER_DiffState Encoder_ReceiveAnalyze() {
       if(LCD_TURNOFF_FLAG)
       {
         LCD_TURNOFF_FLAG=false;
-        DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
+        restore_brightness();
+        // DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
       }
     #endif
   }
@@ -125,7 +151,8 @@ ENCODER_DiffState Encoder_ReceiveAnalyze() {
         if(LCD_TURNOFF_FLAG)
         {
           LCD_TURNOFF_FLAG=false;
-          DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
+          restore_brightness();
+          // DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
         }
       #endif
       static millis_t next_click_update_ms;

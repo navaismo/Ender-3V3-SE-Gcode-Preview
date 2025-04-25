@@ -36,7 +36,7 @@
  */
 
 // Change EEPROM version if the structure changes
-#define EEPROM_VERSION "V86"
+#define EEPROM_VERSION "V87"
 #define EEPROM_OFFSET 100
 
 // Check the integrity of data offsets.
@@ -925,6 +925,8 @@ void MarlinSettings::postprocess() {
     #if PREHEAT_COUNT
       _FIELD_TEST(ui_material_preset);
       EEPROM_WRITE(ui.material_preset);
+      
+      
     #endif
 
     //

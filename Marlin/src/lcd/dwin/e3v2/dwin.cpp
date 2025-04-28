@@ -3271,20 +3271,22 @@ void Goto_PrintProcess()
   Draw_Printing_Screen();
   // Setting interface
   ICON_Tune();
-  if (printingIsPaused() && !HMI_flag.cloud_printing_flag)
-    ICON_Continue();
+  // if (printingIsPaused() && !HMI_flag.cloud_printing_flag)
+  //   ICON_Continue();
   // pause
-  if (printingIsPaused())
-  {
-    Show_JPN_pause_title(); // show title
-    ICON_Continue();
-  }
-  else
-  {
-    // Printing
-    Show_JPN_print_title();
-    ICON_Pause();
-  }
+  ICON_Pause();
+  // if (!printingIsPaused())
+  // {
+  //   // Printing
+  //   Show_JPN_print_title();
+  //   ICON_Pause();
+  // }
+  // else
+  // {
+  //   Show_JPN_pause_title(); // show title
+  //   ICON_Continue();
+    
+  // }
   // stop button
   ICON_Stop();
   // Copy into filebuf string before entry
@@ -5971,24 +5973,27 @@ void HMI_Printing()
         break;
       case 1:
         ICON_Tune();
-        if (printingIsPaused())
+        if (!printingIsPaused())
         {
-          ICON_Continue();
+          ICON_Pause();
+          //ICON_Continue();
         }
         else
         {
-          ICON_Pause();
+          ICON_Continue();
+          // ICON_Pause();
         }
         break;
       case 2:
-        if (printingIsPaused())
+        if (!printingIsPaused())
         {
-
-          ICON_Continue();
+          ICON_Pause();
+          // ICON_Continue();
         }
         else
         {
-          ICON_Pause();
+          ICON_Continue();
+          // ICON_Pause();
         }
         ICON_Stop();
         break;
@@ -6003,16 +6008,20 @@ void HMI_Printing()
       {
       case 0:
         ICON_Tune();
-        if (printingIsPaused())
-          ICON_Continue();
-        else
+        if (!printingIsPaused())
           ICON_Pause();
+          // ICON_Continue();
+        else
+          ICON_Continue();
+          // ICON_Pause();
         break;
       case 1:
-        if (printingIsPaused())
-          ICON_Continue();
-        else
+        if (!printingIsPaused())
           ICON_Pause();
+          // ICON_Continue();
+        else
+          ICON_Continue();
+          // ICON_Pause();
         ICON_Stop();
         break;
       case 2:

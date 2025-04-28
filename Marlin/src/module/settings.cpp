@@ -36,7 +36,7 @@
  */
 
 // Change EEPROM version if the structure changes
-#define EEPROM_VERSION "V87"
+#define EEPROM_VERSION "V88"
 #define EEPROM_OFFSET 100
 
 // Check the integrity of data offsets.
@@ -500,7 +500,8 @@ typedef struct SettingsDataStruct {
   #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)
    uint8_t lcdtime;                
    int16_t lcddimm;             
-   int16_t lcdbright;              
+   int16_t lcdbright;       
+   uint8_t czheight;       
   #endif
 
 //  uint16_t Auto_PID_Value_set1;
@@ -1499,10 +1500,11 @@ void MarlinSettings::postprocess() {
        uint8_t sleep = TURN_OFF_TIME;                
        int16_t dimmBright = DIMM_SCREEN_BRIGHTNESS;
        int16_t bright = MAX_SCREEN_BRIGHTNESS;
+       uint8_t zheight = CZ_AFTER_HOMING;
        EEPROM_WRITE(sleep);              
        EEPROM_WRITE(dimmBright);         
        EEPROM_WRITE(bright);             
- 
+       EEPROM_WRITE(zheight); 
      }             
      #endif
 
@@ -2467,13 +2469,15 @@ void MarlinSettings::postprocess() {
       uint8_t sleep;                 
       int16_t dimmBright;
       int16_t bright;
+      uint8_t zheight;
       EEPROM_READ(sleep);
       TURN_OFF_TIME = (sleep > 60) ? 5 : sleep;              
       EEPROM_READ(dimmBright);
       DIMM_SCREEN_BRIGHTNESS = (dimmBright > 175) ? 175  : dimmBright;         
       EEPROM_READ(bright);             
       MAX_SCREEN_BRIGHTNESS = ( bright > 230) ? 230 : bright;
-
+      EEPROM_READ(zheight);
+      CZ_AFTER_HOMING = (zheight >= 10) ? zheight : 10; //Set default value
     }             
     #endif
       //  EEPROM_READ(Auto_PID_Value_set[1]);
@@ -4087,6 +4091,7 @@ void MarlinSettings::reset() {
       SERIAL_ECHOLNPAIR("MAX BRIGHTNESS: ", MAX_SCREEN_BRIGHTNESS);
       SERIAL_ECHOLNPAIR("DIMM BRIGHTNESS: ", DIMM_SCREEN_BRIGHTNESS);
       SERIAL_ECHOLNPAIR("AUTO OFF TIME: ", TURN_OFF_TIME);
+      SERIAL_ECHOLNPAIR("CUSTOM Z Height After Homing: ", CZ_AFTER_HOMING);
     #endif
 
 

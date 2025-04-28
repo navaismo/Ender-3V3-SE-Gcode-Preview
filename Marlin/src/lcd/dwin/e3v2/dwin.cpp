@@ -203,6 +203,7 @@ select_t select_page{0}, select_file{0}, select_print{0}, select_prepare{0}, sel
 
 uint8_t index_file = MROWS,
         index_prepare = MROWS,
+        index_motion = MROWS,
         index_control = MROWS,
         index_leveling = MROWS,
         index_tune = MROWS,
@@ -1405,7 +1406,8 @@ inline bool Apply_Encoder(const ENCODER_DiffState &encoder_diffState, auto &valr
 #define PREPARE_CASE_LANG (PREPARE_CASE_COOL + 1)
 #define PREPARE_CASE_DISPLAY (PREPARE_CASE_LANG + 1)
 #define PREPARE_CASE_CUSTOM_EXTRUDE (PREPARE_CASE_DISPLAY + 1)
-#define PREPARE_CASE_TOTAL PREPARE_CASE_CUSTOM_EXTRUDE
+#define PREPARE_CASE_ZHEIGHT (PREPARE_CASE_CUSTOM_EXTRUDE + 1)
+#define PREPARE_CASE_TOTAL PREPARE_CASE_ZHEIGHT
 
 #define CONTROL_CASE_TEMP 1
 #define CONTROL_CASE_MOVE (CONTROL_CASE_TEMP + 1)
@@ -1802,6 +1804,19 @@ void Item_Prepare_CExtrude(const uint8_t row)
 }
 
 
+void Item_Prepare_Homeheight(const uint8_t row)
+{
+  if (HMI_flag.language < Language_Max)
+  {
+    DWIN_Draw_Label(MBASE(row)+2, F("Homing Height(mm)"));
+    //DWIN_ICON_Show(HMI_flag.language, LANGUAGE_IN_STORK, 42, MBASE(row) + JPN_OFFSET);
+    //DWIN_ICON_Show(ICON, ICON_More, 208, MBASE(row) - 3);
+  }
+  Draw_Menu_Line(row, ICON_MoveZ);
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(row) , CZ_AFTER_HOMING);
+
+}
+
 
 
 
@@ -1871,6 +1886,9 @@ void Draw_Prepare_Menu()
       
   if (PVISI(PREPARE_CASE_CUSTOM_EXTRUDE))
     Item_Prepare_CExtrude(PSCROL(PREPARE_CASE_CUSTOM_EXTRUDE)); // Custom Extrude 
+  
+  if(PVISI(PREPARE_CASE_ZHEIGHT))
+    Item_Prepare_Homeheight(PSCROL(PREPARE_CASE_ZHEIGHT)); // Custom Z height
     
 
   if (select_prepare.now)
@@ -2259,6 +2277,10 @@ void draw_lin_adv(const uint16_t line)
 }
 
 
+ 
+
+
+
 
 void say_x(const uint16_t inset, const uint16_t line)
 {
@@ -2304,6 +2326,7 @@ void Draw_Motion_Menu()
     DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Step, 42, MBASE(MOTION_CASE_STEPS) + JPN_OFFSET);
     draw_input_shaping(MBASE(MOTION_CASE_INPUT_SHAPING) + 2); // "Input shaping"
     draw_lin_adv(MBASE(MOTION_CASE_LINADV) + 2); // "Linear Advance"
+   
   }
   else
   {
@@ -2331,6 +2354,7 @@ void Draw_Motion_Menu()
     draw_steps_per_mm(MBASE(MOTION_CASE_STEPS)); // "steps per mm"
     draw_input_shaping(MBASE(MOTION_CASE_INPUT_SHAPING) + 2); // "Input shaping"
     draw_lin_adv(MBASE(MOTION_CASE_LINADV) + 2); // "Linear Advance"
+   
 #endif // USE_STRING_TITLES
   }
 
@@ -6787,7 +6811,8 @@ void HMI_Display_Menu(){
       EncoderRate.enabled = true;
       break; 
     case 5:
-      settings.save();    
+      settings.save();  
+      break;  
   
 
     }
@@ -6854,6 +6879,25 @@ void HMI_DimmTime(){
 
   LIMIT(HMI_ValueStruct.Dimm_Time, 1, 60);
   DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(4)+3 , HMI_ValueStruct.Dimm_Time);
+}
+
+void HMI_ZHeight(){
+  ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+
+  if (Apply_Encoder(encoder_diffState,  HMI_ValueStruct.Z_height)) {
+    EncoderRate.enabled = false;
+    LIMIT(HMI_ValueStruct.Z_height, 10, 100);
+    checkkey = Prepare;
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(PREPARE_CASE_ZHEIGHT + MROWS - index_prepare) , HMI_ValueStruct.Z_height);
+    CZ_AFTER_HOMING = HMI_ValueStruct.Z_height;
+    //save to eeprom
+    return;
+  }
+
+  LIMIT(HMI_ValueStruct.Z_height, 10, 100);
+  DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(PREPARE_CASE_ZHEIGHT + MROWS - index_prepare) , HMI_ValueStruct.Z_height);
 }
 
 
@@ -7068,8 +7112,11 @@ void HMI_Prepare()
         if(index_prepare == PREPARE_CASE_DISPLAY)
           Item_Prepare_Display(MROWS); 
         
-          if(index_prepare == PREPARE_CASE_CUSTOM_EXTRUDE)
-          Item_Prepare_CExtrude(MROWS);   
+        if(index_prepare == PREPARE_CASE_CUSTOM_EXTRUDE)
+          Item_Prepare_CExtrude(MROWS);
+          
+        if(index_prepare == PREPARE_CASE_ZHEIGHT)
+          Item_Prepare_Homeheight(MROWS);
       }
       else
       {
@@ -7110,6 +7157,8 @@ void HMI_Prepare()
           Item_Prepare_TPU(0);
         else if (index_prepare == 14)
           Item_Prepare_PETG(0);
+        else if (index_prepare == 15)
+          Item_Prepare_ABS(0);   
   
           
       }
@@ -7286,7 +7335,13 @@ void HMI_Prepare()
       checkkey = CExtrude_Menu;
       select_cextr.reset();
       Draw_CExtrude_Menu();
-    break;  
+      break;  
+
+    case PREPARE_CASE_ZHEIGHT: // Z height
+      checkkey = ZHeight;
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, MBASE(PREPARE_CASE_ZHEIGHT + MROWS - index_prepare) , CZ_AFTER_HOMING);
+      EncoderRate.enabled = true;
+      break;
 
     default:
       break;
@@ -11099,6 +11154,9 @@ void DWIN_HandleScreen()
   case DimmTime:
     HMI_DimmTime();
     break;        
+  case ZHeight:
+    HMI_ZHeight();
+    break;  
   case Step_value:
     HMI_StepXYZE();
     break;

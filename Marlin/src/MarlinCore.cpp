@@ -1681,6 +1681,7 @@ bool LCD_TURNOFF_FLAG = false;
 uint8_t record_lcd_flag = 0;
 extern bool SD_Card_status;
 extern bool sd_printing_autopause;
+uint8_t CZ_AFTER_HOMING = 10; 
 
 
 #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)

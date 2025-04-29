@@ -57,6 +57,23 @@ extern uint8_t record_lcd_flag;
   uint8_t toggle_LCDBeep;
 #endif
 
+
+void Generic_BeepAlert(){
+    WRITE(BEEPER_PIN, HIGH);
+    delay(200);
+    WRITE(BEEPER_PIN, LOW);
+    delay(200);
+    WRITE(BEEPER_PIN, HIGH);
+    delay(200);
+    WRITE(BEEPER_PIN, LOW);
+    delay(200);
+    WRITE(BEEPER_PIN, HIGH);
+    delay(200);
+    delay(200);
+    delay(200);
+    WRITE(BEEPER_PIN, LOW);
+}
+
 void Encoder_tick() {
   #if PIN_EXISTS(BEEPER)
     WRITE(BEEPER_PIN, HIGH);

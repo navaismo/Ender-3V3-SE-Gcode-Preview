@@ -153,6 +153,8 @@ millis_t shift_ms; // = 0
 static uint8_t left_move_index = 0;
 
 bool qrShown = false;
+bool preheat_flag = false;
+uint8_t material_index = 0;
 
 /* Value Init */
 HMI_value_t HMI_ValueStruct;
@@ -396,6 +398,19 @@ static void Auto_in_out_feedstock(bool dir) // 0 returns material, 1 feeds
     SET_HOTEND_TEMP(STOP_TEMPERATURE, 0);                                    // Cool down to 140℃
     // WAIT_HOTEND_TEMP(60 *5 *1000, 5); //Wait for the nozzle temperature to reach the set value
   }
+}
+
+
+// Preheat finished alert
+
+void Preheat_alert(uint8_t material){
+
+  if( preheat_flag && thermalManager.degHotend(0) >= ui.material_preset[material].hotend_temp && thermalManager.degBed() >= ui.material_preset[material].bed_temp){
+    // beep to alert process finished
+    Generic_BeepAlert();
+    preheat_flag = false;
+   }
+
 }
 
 // Custom Extrude Process
@@ -7062,7 +7077,6 @@ void HMI_CustomExtrudeLength(){
 }
 
 
-
 /* Prepare */
 void HMI_Prepare()
 {
@@ -7256,6 +7270,8 @@ void HMI_Prepare()
     case PREPARE_CASE_PLA: // PLA preheat
       TERN_(HAS_HEATED_BED, thermalManager.setTargetBed(ui.material_preset[0].bed_temp));
       TERN_(HAS_FAN, thermalManager.set_fan_speed(0, ui.material_preset[0].fan_speed));
+      preheat_flag = true;
+      material_index = 0;
 #if ENABLED(USE_SWITCH_POWER_200W)
       while (ABS(thermalManager.degTargetBed() - thermalManager.degBed()) > TEMP_WINDOW)
       {
@@ -7267,6 +7283,8 @@ void HMI_Prepare()
     case PREPARE_CASE_TPU: // TPU preheat
       TERN_(HAS_HEATED_BED, thermalManager.setTargetBed(ui.material_preset[1].bed_temp));
       TERN_(HAS_FAN, thermalManager.set_fan_speed(0, ui.material_preset[1].fan_speed));
+      preheat_flag = true;
+      material_index = 1;
 #if ENABLED(USE_SWITCH_POWER_200W)
       while (ABS(thermalManager.degTargetBed() - thermalManager.degBed()) > TEMP_WINDOW)
       {
@@ -7279,6 +7297,8 @@ void HMI_Prepare()
       case PREPARE_CASE_PETG: // PETG preheat
       TERN_(HAS_HEATED_BED, thermalManager.setTargetBed(ui.material_preset[2].bed_temp));
       TERN_(HAS_FAN, thermalManager.set_fan_speed(0, ui.material_preset[2].fan_speed));
+      preheat_flag = true;
+      material_index = 2;
 #if ENABLED(USE_SWITCH_POWER_200W)
       while (ABS(thermalManager.degTargetBed() - thermalManager.degBed()) > TEMP_WINDOW)
       {
@@ -7291,6 +7311,8 @@ void HMI_Prepare()
     case PREPARE_CASE_ABS: // ABS preheat
       TERN_(HAS_HEATED_BED, thermalManager.setTargetBed(ui.material_preset[3].bed_temp));
       TERN_(HAS_FAN, thermalManager.set_fan_speed(0, ui.material_preset[3].fan_speed));
+      preheat_flag = true;
+      material_index = 3;
 #if ENABLED(USE_SWITCH_POWER_200W)
       while (ABS(thermalManager.degTargetBed() - thermalManager.degBed()) > TEMP_WINDOW)
       {
@@ -7331,7 +7353,7 @@ void HMI_Prepare()
       Popup_Window_Home();
       gcode.process_subcommands_now_P(PSTR("G28")); //home
       delay(200);
-      gcode.process_subcommands_now_P(PSTR("G0 X-40 Z35 F7000")); // raise Z
+      gcode.process_subcommands_now_P(PSTR("G0 X-40 Z40 F7000")); // raise Z
       checkkey = CExtrude_Menu;
       select_cextr.reset();
       Draw_CExtrude_Menu();
@@ -10249,11 +10271,16 @@ void EachMomentUpdate()
   if (ELAPSED(ms, next_var_update_ms))
   {
     next_var_update_ms = ms + DWIN_VAR_UPDATE_INTERVAL;
-
+    
+    //Update LCD when using Octoprint
     if(serial_connection_active){
       DWIN_OctoUpdate();
     }
 
+    //Monitor the Preheat Material Alert
+    if(preheat_flag){
+      Preheat_alert(material_index);
+    }
 
     if (!HMI_flag.Refresh_bottom_flag)
     {

@@ -402,11 +402,11 @@ static void Auto_in_out_feedstock(bool dir) // 0 returns material, 1 feeds
 
 
 // Preheat finished alert
-
 void Preheat_alert(uint8_t material){
-
   if( preheat_flag && thermalManager.degHotend(0) >= ui.material_preset[material].hotend_temp && thermalManager.degBed() >= ui.material_preset[material].bed_temp){
     // beep to alert process finished
+    Generic_BeepAlert();
+    delay(200);
     Generic_BeepAlert();
     preheat_flag = false;
    }

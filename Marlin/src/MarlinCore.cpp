@@ -1690,26 +1690,26 @@ int16_t MAX_SCREEN_BRIGHTNESS = 230;
 int16_t TURN_OFF_TIME = 5;
 
 // Smoothly dim brightness
-void dimm_brightness() {
-  const uint16_t step_delay = 10; // Delay between steps
-  const uint8_t steps = 15;       // Number of steps
+// void dimm_brightness() {
+//   const uint16_t step_delay = 10; // Delay between steps
+//   const uint8_t steps = 15;       // Number of steps
 
-  int16_t current_brightness = MAX_SCREEN_BRIGHTNESS;
-  int16_t brightness_range = MAX_SCREEN_BRIGHTNESS - DIMM_SCREEN_BRIGHTNESS;
-  int16_t step_size = brightness_range / steps;
+//   int16_t current_brightness = MAX_SCREEN_BRIGHTNESS;
+//   int16_t brightness_range = MAX_SCREEN_BRIGHTNESS - DIMM_SCREEN_BRIGHTNESS;
+//   int16_t step_size = brightness_range / steps;
 
-  // Make sure step size is at least 1 to prevent infinite loop
-  if (step_size < 1) step_size = 1;
+//   // Make sure step size is at least 1 to prevent infinite loop
+//   if (step_size < 1) step_size = 1;
 
-  // Gradually decrease brightness
-  while (current_brightness > DIMM_SCREEN_BRIGHTNESS) {
-    current_brightness -= step_size;
-    if (current_brightness < DIMM_SCREEN_BRIGHTNESS)
-      current_brightness = DIMM_SCREEN_BRIGHTNESS; // Cap to min value
-    DWIN_Backlight_SetLuminance(current_brightness);
-    delay(step_delay); // Delay between steps
-  }
-}
+//   // Gradually decrease brightness
+//   while (current_brightness > DIMM_SCREEN_BRIGHTNESS) {
+//     current_brightness -= step_size;
+//     if (current_brightness < DIMM_SCREEN_BRIGHTNESS)
+//       current_brightness = DIMM_SCREEN_BRIGHTNESS; // Cap to min value
+//     DWIN_Backlight_SetLuminance(current_brightness);
+//     delay(step_delay); // Delay between steps
+//   }
+// }
 static void Auto_Turnof_Function()
 {
   // 按钮无动作超时
@@ -1717,8 +1717,8 @@ static void Auto_Turnof_Function()
   {
     if(!LCD_TURNOFF_FLAG)   // 没有熄灭屏
     {
-      //DWIN_Backlight_SetLuminance(DIMM_SCREEN_BRIGHTNESS);
-      dimm_brightness();
+      DWIN_Backlight_SetLuminance(DIMM_SCREEN_BRIGHTNESS);
+      //dimm_brightness();
       LCD_TURNOFF_FLAG=true;  // 灭屏
     }
   }

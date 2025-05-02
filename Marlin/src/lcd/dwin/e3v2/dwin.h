@@ -652,6 +652,11 @@ extern enum DC_language current_language;
 #define Button_Select_Color 0xFFFF  // Selected color
 #define All_Black         0x0000  // Selected color
 
+//octo imagemap
+#define OctoIMAGE_WIDTH 96
+// Buffer to hold one line of the image
+extern uint16_t OctoImageLine[OctoIMAGE_WIDTH];
+extern bool Show_Default_IMG;
 
 extern volatile uint8_t checkkey;
 extern float zprobe_zoffset;
@@ -890,10 +895,19 @@ void octoUpdateScroll();
 void clearOctoScrollVars();
 // Set Values for updates
 void DWIN_SetPrintingDetails(const char *eta, const char *progress, const char *current_layer);
-
+// Render Image Map
+void DWIN_RenderOctoTitle();
+void initializeImageMap();
+void DWIN_RenderOctoLine(uint16_t y);
 // Update print time
 void DWIN_OctoSetPrintTime(char* print_time);
 
+void Clear_Octo_Area();
+void Clear_Octo_UpperArea();
+void Draw_OctoSelect_Highlight(const bool sel);
+void Draw_OctoPopup_Bkgd_60();
+void OctoPopup_PauseOrStop();
+void Draw_OctoTune_Menu();
 
 
 void DWIN_CompletedHoming();

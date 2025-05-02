@@ -156,6 +156,17 @@ bool qrShown = false;
 bool preheat_flag = false;
 uint8_t material_index = 0;
 
+//initialize the image map
+bool Show_Default_IMG;
+// uint16_t OctoImageMap[OctoIMAGE_MAP_SIZE];
+// In DWIN.cpp
+uint16_t OctoImageLine[OctoIMAGE_WIDTH];
+ void initializeImageMap() {
+  //clear the image map to black
+  memset(OctoImageLine, 0, sizeof(OctoImageLine));
+  //SERIAL_ECHOLN("OctoImageLine initialized to 0:");
+ }
+
 /* Value Init */
 HMI_value_t HMI_ValueStruct;
 HMI_Flag_t HMI_flag{0};
@@ -257,6 +268,7 @@ bool updateOctoData = false;
 char Octo_ETA_Global[20];
 char Octo_Progress_Global[20];
 char Octo_CL_Global[20];
+int clear_UpperArea = 0;
   
 #endif
 #endif
@@ -2152,7 +2164,8 @@ void Item_Tune_Zoffset(const uint8_t row)
 void Draw_Tune_Menu()
 {
   Clear_Main_Window();
-  Draw_Mid_Status_Area(true); // rock_20230529 //Update all parameters once
+  HMI_flag.Refresh_bottom_flag = false;
+  //Draw_Mid_Status_Area(true); // rock_20230529 //Update all parameters once
 
   const int16_t scroll = MROWS - index_tune; // Scrolled-up lines
 #define TSCROL(L) (scroll + (L))
@@ -2198,6 +2211,185 @@ void Draw_Tune_Menu()
   if (select_tune.now)
     Draw_Menu_Cursor(TSCROL(select_tune.now));
 }
+
+
+// ! Start new menu tests <<<<<<<<<<<<<<
+
+constexpr uint16_t TUNE_MENU_START_X = 0;
+constexpr uint16_t TUNE_MENU_START_Y = 123;
+constexpr uint16_t OctoMROWS = 3;
+uint8_t octo_index_tune = OctoMROWS,
+        octo_index_prepare = OctoMROWS,
+        octo_index_temp = OctoMROWS;
+#define OCTO_MBASE(L) (TUNE_MENU_START_Y + 36 + MLINE * (L))
+
+
+void Octo_Draw_Menu_Cursor(const uint8_t line) {
+  DWIN_Draw_Rectangle(1, Rectangle_Color, 0, OCTO_MBASE(line) - 8, 10, OCTO_MBASE(line + 1) - 12);
+}
+
+void Erase_Menu_Cursor_Octo(const uint8_t line) {
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, OCTO_MBASE(line) - 8, 10, OCTO_MBASE(line + 1) - 12);
+}
+
+void Move_Highlight_Octo(const int16_t from, const uint16_t newline) {
+  Erase_Menu_Cursor_Octo(newline - from);
+  Octo_Draw_Menu_Cursor(newline);
+}
+
+void Add_Menu_Line_Octo() {
+  Move_Highlight_Octo(1, OctoMROWS);
+  DWIN_Draw_Line(Line_Color, 16, OCTO_MBASE(OctoMROWS + 1) - 10, BLUELINE_X, OCTO_MBASE(OctoMROWS + 1) - 10);
+}
+
+void Scroll_Menu_Octo(const uint8_t dir) {
+  HMI_flag.Refresh_bottom_flag = false;
+  DWIN_Frame_AreaMove(1, dir, MLINE, Color_Bg_Black, 11, TUNE_MENU_START_Y +30, DWIN_WIDTH - 1, 320 - 1); // Pan interface
+  // Ensure the header stays in place
+  DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y);
+  switch (dir) {
+    case DWIN_SCROLL_DOWN:
+      Move_Highlight_Octo(-1, 0);
+      break;
+    case DWIN_SCROLL_UP:
+      Add_Menu_Line_Octo();
+      break;
+  }
+}
+
+void Octo_Draw_Menu_Icon(const uint8_t line, const uint8_t icon) {
+  DWIN_ICON_Not_Filter_Show(ICON, icon, 20, OCTO_MBASE(line));
+}
+
+void Octo_Draw_More_Icon(uint8_t line) {
+    DWIN_ICON_Show(ICON, ICON_More, 208,  OCTO_MBASE(line) - 3);
+  }
+
+void Octo_Draw_Menu_Line(const uint8_t line, const uint8_t icon = 0, const char *const label = nullptr, bool more = false) {
+  if (label)
+    DWIN_Draw_String(false, false, font8x16, Color_White, Color_Bg_Black, LBLX, OCTO_MBASE(line) - 1, (char *)label);
+  if (icon)
+    Octo_Draw_Menu_Icon(line, icon);
+  if (more)
+    Octo_Draw_More_Icon(line);
+
+    DWIN_Draw_Line(Line_Color, 16, OCTO_MBASE(line) + 26, BLUELINE_X, OCTO_MBASE(line) + 26);  
+}
+
+
+void Octo_Draw_Back_Label() {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Back, 42, OCTO_MBASE(0) + JPN_OFFSET);
+  } else {
+    DWIN_Frame_AreaCopy(1, 226, 179, BLUELINE_X, 189, LBLX, OCTO_MBASE(0));
+  }
+}
+
+
+void Octo_Draw_Back_First(const bool is_sel = true) {
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, TUNE_MENU_START_X + 10, OCTO_MBASE(0) - 9, 239, OCTO_MBASE(0) + 18);
+  Octo_Draw_Menu_Line(0, ICON_Back);
+  Octo_Draw_Back_Label();
+  if (is_sel)
+    Octo_Draw_Menu_Cursor(0);
+}
+
+void Octo_Item_Tune_Speed(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_PrintSpeed, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Line(row, ICON_Speed);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(row) + PRINT_SET_OFFSET, feedrate_percentage);
+  }
+}
+
+void Octo_Item_Tune_Temp(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Hotend, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Line(row, ICON_HotendTemp);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(row) + PRINT_SET_OFFSET, thermalManager.degTargetHotend(0));
+  }
+}
+
+void Octo_Item_Tune_Flow(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_MoveE, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Line(row, ICON_StepE);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(row) + PRINT_SET_OFFSET, planner.flow_percentage[0]);
+  }
+}
+
+void Octo_Item_Tune_Bed(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Bedend, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Line(row, ICON_BedTemp);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(row) + PRINT_SET_OFFSET, thermalManager.degTargetBed());
+  }
+}
+
+void Octo_Item_Tune_Fan(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Fan, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Line(row, ICON_FanSpeed);
+    DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Color_Bg_Black, 3, VALUERANGE_X, OCTO_MBASE(row) + PRINT_SET_OFFSET, thermalManager.fan_speed[0]);
+  }
+}
+
+void Octo_Item_Tune_Zoffset(const uint8_t row) {
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Zoffset, TUNE_MENU_START_X + 42, OCTO_MBASE(row) + JPN_OFFSET);
+    Octo_Draw_Menu_Icon(row, ICON_Zoffset);
+    Octo_Draw_Menu_Line(row, ICON_Zoffset);
+    DWIN_Draw_Signed_Float(font8x16, Color_Bg_Black, 2, 2, VALUERANGE_X - 14, OCTO_MBASE(row), BABY_Z_VAR * 100);
+  }
+}
+
+
+
+void Draw_OctoTune_Menu() {
+  Draw_OctoTitle(vvfilename);  
+  Clear_Octo_Area();
+  HMI_flag.Refresh_bottom_flag = true;
+  const int16_t Oscroll = OctoMROWS - octo_index_tune; // Scrolled-up lines
+  #define OTSCROL(L) (Oscroll + (L))
+  #define OTVISI(L) WITHIN(OTSCROL(L), 0, OctoMROWS)
+
+  if (HMI_flag.language < Language_Max) {
+    DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Setup, 27, TUNE_MENU_START_Y); // Title
+  } else {
+    ;
+  }
+
+  if (OTVISI(0))
+    Octo_Draw_Back_First(select_tune.now == 0);  // < Back
+  if (OTVISI(TUNE_CASE_SPEED))
+    Octo_Item_Tune_Speed(OTSCROL(TUNE_CASE_SPEED));  // Speed
+
+  #if HAS_HOTEND
+    if (OTVISI(TUNE_CASE_TEMP))
+      Octo_Item_Tune_Temp(OTSCROL(TUNE_CASE_TEMP));  // Hotend Temp
+
+    if (OTVISI(TUNE_CASE_FLOW))
+      Octo_Item_Tune_Flow(OTSCROL(TUNE_CASE_FLOW));  // Flow
+  #endif
+
+  #if HAS_HEATED_BED
+    if (OTVISI(TUNE_CASE_BED))
+      Octo_Item_Tune_Bed(OTSCROL(TUNE_CASE_BED));  // Bed Temp
+  #endif
+
+  #if HAS_FAN 
+    if (OTVISI(TUNE_CASE_FAN))
+      Octo_Item_Tune_Fan(OTSCROL(TUNE_CASE_FAN));  // Fan Speed
+  #endif
+  #if HAS_ZOFFSET_ITEM
+    if (OTVISI(TUNE_CASE_ZOFF))
+      Octo_Item_Tune_Zoffset(OTSCROL(TUNE_CASE_ZOFF));  // Z offset
+  #endif
+
+  if (select_tune.now)
+    Octo_Draw_Menu_Cursor(OTSCROL(select_tune.now));
+}
+
 
 void draw_qrcode(const uint16_t topLeftX, const uint16_t topLeftY, const uint8_t moduleSize, const char *qrcode_data) {
   // The structure to manage the QR code
@@ -2492,6 +2684,13 @@ void Draw_Popup_Bkgd_60()
   DWIN_Draw_Rectangle(1, Color_Bg_Window, 6, 30, 232, 240);
 #endif
 }
+
+void Draw_OctoPopup_Bkgd_60()
+{
+  DWIN_Draw_Rectangle(1, Color_Bg_Window, 0, 123, 240, 320);
+}
+
+
 
 #if HAS_HOTEND
 void Popup_Window_ETempTooLow()
@@ -2942,6 +3141,29 @@ void Draw_Select_Highlight(const bool sel)
 #endif
 }
 
+void Clear_Octo_UpperArea(){
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, 25, 240, 124);
+
+}
+void Clear_Octo_Area()
+{
+  DWIN_Draw_Rectangle(1, Color_Bg_Black, 0, 123, 240, 319);
+}
+
+
+void Draw_OctoSelect_Highlight(const bool sel)
+{
+  HMI_flag.select_flag = sel;
+  const uint16_t c1 = sel ? Button_Select_Color : Color_Bg_Window,
+                 c2 = sel ? Color_Bg_Window : Button_Select_Color;
+
+  DWIN_Draw_Rectangle(0, c1, 25, 193, 108, 226);
+  DWIN_Draw_Rectangle(0, c1, 24, 192, 109, 227);
+  DWIN_Draw_Rectangle(0, c2, 131, 193, 214, 226);
+  DWIN_Draw_Rectangle(0, c2, 130, 192, 215, 227);
+
+}
+
 void Popup_window_PauseOrStop()
 {
   Clear_Main_Window();
@@ -3361,6 +3583,8 @@ void Goto_MainMenu()
 {
   DWIN_Backlight_SetLuminance(MAX_SCREEN_BRIGHTNESS);
   updateOctoData = false;
+  initializeImageMap();
+  clear_UpperArea = 0;
   checkkey = MainMenu;
   Clear_Main_Window();
   HMI_flag.Refresh_bottom_flag = true; // Flag does not refresh bottom parameters
@@ -6163,6 +6387,8 @@ void HMI_PauseOrStop()
     else if (select_print.now == 2)
     { // stop window
       updateOctoData = false;
+      clear_UpperArea = 0;
+      initializeImageMap();
       if (HMI_flag.select_flag)
       {
         if (HMI_flag.home_flag)
@@ -9245,7 +9471,7 @@ void HMI_O9000()
       select_tune.reset();
       HMI_flag.Refresh_bottom_flag = false; // Flag refresh bottom parameter
       index_tune = MROWS;
-      Draw_Tune_Menu();
+      Draw_OctoTune_Menu();
       break;
     case 1: // Pause
       if (HMI_flag.pause_flag)
@@ -9279,13 +9505,13 @@ void HMI_O9000()
         // Cancel
         HMI_flag.select_flag = true;
         checkkey = O9000Print_window;
-        Popup_window_PauseOrStop();
+        OctoPopup_PauseOrStop();
       }
       break;
     case 2: // Stop
       HMI_flag.select_flag = true;
       checkkey = O9000Print_window;
-      Popup_window_PauseOrStop();
+      OctoPopup_PauseOrStop();
       break;
     default:
       break;
@@ -9295,128 +9521,119 @@ void HMI_O9000()
 }
 
 // octo tune
-void HMI_O9000Tune()
-{
-  updateOctoData=false;
+void HMI_O9000Tune() {
+  updateOctoData = false;
+  HMI_flag.Refresh_bottom_flag = true;
   ENCODER_DiffState encoder_diffState = get_encoder_state();
   if (encoder_diffState == ENCODER_DIFF_NO)
     return;
 
-  // Avoid flicker by updating only the previous menu
-  if (encoder_diffState == ENCODER_DIFF_CW)
-  {
-    if (select_tune.inc(1 + TUNE_CASE_TOTAL))
-    {
-      if (select_tune.now > MROWS && select_tune.now > index_tune)
-      {
-        index_tune = select_tune.now;
-        Scroll_Menu(DWIN_SCROLL_UP);
-#if ENABLED(DWIN_CREALITY_320_LCD)
-        DWIN_Draw_Rectangle(1, All_Black, 50, 206, DWIN_WIDTH, 236);
-#endif
-        // Show new icons
-        Draw_Menu_Icon(MROWS, ICON_Zoffset);
+  if (encoder_diffState == ENCODER_DIFF_CW) {
+    if (select_tune.inc(1 + TUNE_CASE_TOTAL)) {
+      if (select_tune.now > OctoMROWS && select_tune.now > octo_index_tune) {
+        octo_index_tune = select_tune.now;
+        HMI_flag.Refresh_bottom_flag = true;
+        Scroll_Menu_Octo(DWIN_SCROLL_UP);
+        
+        DWIN_Draw_Rectangle(1, Color_Bg_Black, 0,268,240,330); // Clear the last line
 
-#if HAS_ZOFFSET_ITEM
-        if (index_tune == TUNE_CASE_ZOFF)         
-          Item_Tune_Zoffset(MROWS);
-#endif
-      }
-      else
-      {
-        Move_Highlight(1, select_tune.now + MROWS - index_tune);
-      }
-    }
-  }
-  else if (encoder_diffState == ENCODER_DIFF_CCW)
-  {
-    if (select_tune.dec())
-    {
-      if (select_tune.now < index_tune - MROWS)
-      {
-        index_tune--;
-        Scroll_Menu(DWIN_SCROLL_DOWN);
-        DWIN_Draw_Rectangle(1, Color_Bg_Black, 180, MBASE(0) - 8, 238, MBASE(0 + 1) - 12); // Clear the last line
-        if (index_tune == MROWS)
-          Draw_Back_First();
-        else if(index_tune == 6) 
-          Item_Tune_Speed(0); 
-      }
-      else
-      {
-        Move_Highlight(-1, select_tune.now + MROWS - index_tune);
+        uint8_t new_row = OctoMROWS;
+        switch (octo_index_tune) {
+          case TUNE_CASE_FAN:  Octo_Item_Tune_Fan(new_row); break;
+          case TUNE_CASE_BED:  Octo_Item_Tune_Bed(new_row); break;
+          case TUNE_CASE_ZOFF: Octo_Item_Tune_Zoffset(new_row); break;
+        }
+      } else {
+        Move_Highlight_Octo(1, select_tune.now + OctoMROWS - octo_index_tune);
       }
     }
-  }
-  else if (encoder_diffState == ENCODER_DIFF_ENTER)
-  {
-    switch (select_tune.now)
-    {
-    case 0:
-    { // Back
+  } else if (encoder_diffState == ENCODER_DIFF_CCW) {
+    if (select_tune.dec()) {
+      if (select_tune.now < octo_index_tune - OctoMROWS) {
+        octo_index_tune--;
+        HMI_flag.Refresh_bottom_flag = true;
+        Scroll_Menu_Octo(DWIN_SCROLL_DOWN);
+        
+       
+
+        if (octo_index_tune == OctoMROWS) {
+          Octo_Draw_Back_First();
+        }else if(octo_index_tune == 4) {
+          Octo_Item_Tune_Speed(0);
+        } else if (octo_index_tune == 5) {
+          Octo_Item_Tune_Temp(0);
+        } else if (octo_index_tune == 6) {
+          Octo_Item_Tune_Flow(0);
+        }
+      } else {
+        Move_Highlight_Octo(-1, select_tune.now + OctoMROWS - octo_index_tune);
+      }
+    }
+  } else if (encoder_diffState == ENCODER_DIFF_ENTER) {
+    switch (select_tune.now) {
+    case 0: { // Back
       select_print.set(0);
-      // SERIAL_ECHOLNPAIR("returning from Tune menu with FN as: ", vvfilename);
-      
       DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
-
-    }
-    break;
+    } break;
     case TUNE_CASE_SPEED: // Print speed
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000PrintSpeed;
       HMI_ValueStruct.print_speed = feedrate_percentage;
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(TUNE_CASE_SPEED + MROWS - index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.print_speed);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_SPEED + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.print_speed);
       EncoderRate.enabled = true;
       break;
-#if HAS_HOTEND
+    #if HAS_HOTEND
     case TUNE_CASE_TEMP: // Nozzle temp
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000ETemp;
       HMI_ValueStruct.E_Temp = thermalManager.degTargetHotend(0);
       LIMIT(HMI_ValueStruct.E_Temp, HEATER_0_MINTEMP, thermalManager.hotend_max_target(0));
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(TUNE_CASE_TEMP + MROWS - index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Temp);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_TEMP + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Temp);
       EncoderRate.enabled = true;
       break;
 
     case TUNE_CASE_FLOW: // Flow rate
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000EFlow;
       HMI_ValueStruct.E_Flow = planner.flow_percentage[0];
       LIMIT(HMI_ValueStruct.E_Flow, FLOW_MINVAL, FLOW_MAXVAL);
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(TUNE_CASE_FLOW + MROWS - index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Flow);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_FLOW + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.E_Flow);
       EncoderRate.enabled = true;
       break;
-
-
-#endif
-#if HAS_HEATED_BED
+    #endif
+    #if HAS_HEATED_BED
     case TUNE_CASE_BED: // Bed temp
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000BedTemp;
       HMI_ValueStruct.Bed_Temp = thermalManager.degTargetBed();
       LIMIT(HMI_ValueStruct.Bed_Temp, BED_MINTEMP, BED_MAX_TARGET);
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(TUNE_CASE_BED + MROWS - index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_BED + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.Bed_Temp);
       EncoderRate.enabled = true;
       break;
-#endif
-#if HAS_FAN
+    #endif
+    #if HAS_FAN
     case TUNE_CASE_FAN: // Fan speed
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000FanSpeed;
       HMI_ValueStruct.Fan_speed = thermalManager.fan_speed[0];
-      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, MBASE(TUNE_CASE_FAN + MROWS - index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.Fan_speed);
+      DWIN_Draw_IntValue(true, true, 0, font8x16, Color_White, Select_Color, 3, VALUERANGE_X, OCTO_MBASE(TUNE_CASE_FAN + OctoMROWS - octo_index_tune) + PRINT_SET_OFFSET, HMI_ValueStruct.Fan_speed);
       EncoderRate.enabled = true;
       break;
-#endif
-#if HAS_ZOFFSET_ITEM
+    #endif
+    #if HAS_ZOFFSET_ITEM
     case TUNE_CASE_ZOFF: // With offset
-#if EITHER(HAS_BED_PROBE, BABYSTEPPING)
+      #if EITHER(HAS_BED_PROBE, BABYSTEPPING)
+      HMI_flag.Refresh_bottom_flag = true;
       checkkey = O9000Homeoffset;
       HMI_ValueStruct.offset_value = BABY_Z_VAR * 100;
-      DWIN_Draw_Signed_Float(font8x16, Select_Color, 2, 2, VALUERANGE_X - 14, MBASE(TUNE_CASE_ZOFF + MROWS - index_tune), HMI_ValueStruct.offset_value);
+      DWIN_Draw_Signed_Float(font8x16, Select_Color, 2, 2, VALUERANGE_X - 14, OCTO_MBASE(TUNE_CASE_ZOFF + OctoMROWS - octo_index_tune), HMI_ValueStruct.offset_value);
       EncoderRate.enabled = true;
-#else
-                         // Apply workspace offset, making the current position 0,0,0
+      #else
       queue.inject_P(PSTR("G92 X0 Y0 Z0"));
       HMI_AudioFeedback();
-#endif
+      #endif
       break;
-#endif
+    #endif
     default:
       break;
     }
@@ -11618,13 +11835,24 @@ void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char 
   snprintf(show_layers, sizeof(show_layers), "%s / %s", vcurr_layer, vtotal_layer);
 
   checkkey = O9000Ctrl;
-  Clear_Main_Window();
+  Clear_Title_Bar();
+  // Clear the upper area just once, when loading first time
+  if(clear_UpperArea == 0){
+    Clear_Octo_UpperArea();
+  }
+  if(Show_Default_IMG){
+    Clear_Octo_UpperArea();
+    DC_Show_defaut_imageOcto();
+  }
+  
+  Clear_Octo_Area();
   Draw_Mid_Status_Area(true);
+  clear_UpperArea++;
   HMI_flag.Refresh_bottom_flag = false;
 
   Draw_OctoTitle(vfilename); // FileName as Title
-  if (vthumb == NULL || vthumb[0] == '\0')
-    DC_Show_defaut_imageOcto(); // For the moment show default preview
+  // if (vthumb == NULL || vthumb[0] == '\0')
+  //   DC_Show_defaut_imageOcto(); // For the moment show default preview
 
   Draw_Print_ProgressBarOcto(atoi(vprogress));
   DWIN_Draw_String(false, false, font6x12, Color_Yellow, Color_Bg_Black, 12, 123, F("Print Time:")); // Label Print Time
@@ -11651,6 +11879,16 @@ void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char 
   }
   // Stop button --Stop
   ICON_Stop();
+}
+
+void DWIN_OctoSetPrintTime(char* print_time){
+  const char *vprint_time = print_time && print_time[0] != '\0' ? print_time : "00:00:00";
+  // Copy to reuse vlues outside the function
+  strncpy(vvprint_time, vprint_time, sizeof(vvprint_time) - 1);
+
+  DWIN_Draw_Rectangle(1, All_Black, 120, 123, 230, 143);
+  DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 123, F(vprint_time));
+
 }
 
 // Function to set the printing variables
@@ -11712,6 +11950,7 @@ void clearOctoScrollVars(){
 // finishc job, clear controls and allow go back main window
 void DWIN_OctoJobFinish()
 {
+  clear_UpperArea = 0;
   updateOctoData = false;
   checkkey = OctoFinish;
   HMI_flag.Refresh_bottom_flag = true;
@@ -11719,9 +11958,10 @@ void DWIN_OctoJobFinish()
   clearOctoScrollVars();
   snprintf(show_layers, sizeof(show_layers), "%s / %s", vvtotal_layer, vvtotal_layer);
   Clear_Title_Bar();
-  Clear_Main_Window();
-  DC_Show_defaut_imageOcto(); // For the moment show default preview
+  //Clear below area
+  Clear_Octo_Area();
   Draw_Print_ProgressBarOcto(atoi("100"));
+  
   DWIN_Draw_String(false, false, font6x12, Color_Yellow, Color_Bg_Black, 12, 145, F("Print Time:")); // Label Print Time
   DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 136, 145, F(vvprint_time));   // value Print Time
   DWIN_Draw_String(false, false, font6x12, Color_Yellow, Color_Bg_Black, 12, 165, F("Elapsed Time:"));  // Label Time Left
@@ -11740,26 +11980,68 @@ void DWIN_OctoJobFinish()
     DWIN_ICON_Show(HMI_flag.language, LANGUAGE_LEVEL_FINISH, TITLE_X, TITLE_Y);
     DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, OK_BUTTON_X, 225);
   }
-}
 
-
-
-void DWIN_OctoSetPrintTime(char* print_time){
-  const char *vprint_time = print_time && print_time[0] != '\0' ? print_time : "00:00:00";
-  // Copy to reuse vlues outside the function
-  strncpy(vvprint_time, vprint_time, sizeof(vvprint_time) - 1);
-
-  DWIN_Draw_Rectangle(1, All_Black, 120, 123, 230, 143);
-  DWIN_Draw_String(false, false, font6x12, Color_White, Color_Bg_Black, 126, 123, F(vprint_time));
+  //Clean imagemap
+  initializeImageMap();
 
 }
 
-void DWIN_OctoShowGCodeImage()
+
+void OctoPopup_PauseOrStop()
 {
-  checkkey = M117Info; // Implement Human Interface Control for M117
-  Clear_Main_Window();
- // Octo dwin preview();
+  //Clear_Main_Window();
+  Draw_OctoPopup_Bkgd_60();
+  HMI_flag.Refresh_bottom_flag = true; // Flag does not refresh bottom parameters
+
+  if (HMI_flag.language < Language_Max)
+  {
+    if (select_print.now == 1)
+    {
+      DWIN_ICON_Show(HMI_flag.language, LANGUAGE_PausePrint, 14, 125);
+    }
+    else if (select_print.now == 2)
+    {
+      DWIN_ICON_Show(HMI_flag.language, LANGUAGE_StopPrint, 14, 125);
+    }
+    DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, 26, 194);
+    DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Cancel, 132, 194);
+  }
+  else
+  {
+  }
+  Draw_OctoSelect_Highlight(true);
+
 }
+
+void DWIN_RenderOctoTitle(){
+  Clear_Title_Bar();
+  Draw_OctoTitle(vvfilename);
+}
+
+void DWIN_RenderOctoLine(uint16_t y) {
+  if (y >= 96) return;
+
+  const uint16_t x_start = 12;
+  const uint16_t y_start = 25;
+
+  //SERIAL_ECHOLNPAIR("O9002: Rendering Line ", y);
+
+  for (uint16_t x = 0; x < 96; x++) {
+      uint16_t color = OctoImageLine[x];
+
+      // Debug output
+      // SERIAL_ECHOPAIR("Pixel at (", x);
+      // SERIAL_ECHOPAIR(", ", y);
+      // SERIAL_ECHOLNPAIR(") Color: ", color);
+
+      // Draw the pixel
+      DWIN_Draw_Rectangle(1, color, x_start + x, y_start + y, x_start + x, y_start + y);
+  }
+
+  SERIAL_ECHOLNPAIR("O9002 ACK LINE ", y);
+}
+
+
 
 void DWIN_CompletedHoming()
 {

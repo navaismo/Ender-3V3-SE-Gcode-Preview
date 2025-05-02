@@ -711,6 +711,8 @@ private:
    #if ENABLED(HOST_ACTION_COMMANDS)
     static void O9000(); // receive print details from serial device 
     static void O9001(); // receive update details from serial device
+    static void O9002(); // receive image map  from serial device
+    static void O9003(); // receive image map  from serial device
   #endif
   #endif
 

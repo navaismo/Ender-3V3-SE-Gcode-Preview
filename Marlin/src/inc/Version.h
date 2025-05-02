@@ -26,7 +26,7 @@
  */
 #ifndef SHORT_BUILD_VERSION
   #if ENABLED(HIGH_SPEED_1)
-    #define SHORT_BUILD_VERSION "V1.0.9.8"
+    #define SHORT_BUILD_VERSION "V1.0.9.8PIC"
   #else
     #define SHORT_BUILD_VERSION "Ender-3V3 SE_Ten_P1T14T" // GD32F303RET6 + Multilanguage 1.Chinese 2.English 3.German 4.Russian 5.French 6.Turkish 7.Spanish 8.Italian 9.Portuguese
   #endif  
@@ -46,7 +46,7 @@
  * version was tagged.
  */
 #ifndef STRING_DISTRIBUTION_DATE
-  #define STRING_DISTRIBUTION_DATE "2025-05-01"
+  #define STRING_DISTRIBUTION_DATE "2025-05-02"
 #endif
 
 /**
@@ -86,7 +86,7 @@
  * providing the source code to your customers.)
  */
 #ifndef SOURCE_CODE_URL
-  #define SOURCE_CODE_URL "https://github.com/navaismo/Ender-3V3-SE/tree/main"
+  #define SOURCE_CODE_URL "https://github.com/navaismo/Ender-3V3-SE-Gcode-Preview/tree/main"
 #endif
 
 /**

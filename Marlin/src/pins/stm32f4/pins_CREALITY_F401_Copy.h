@@ -47,8 +47,8 @@
 //#endif
 
 #if ENABLED(IIC_BL24CXX_EEPROM)
-  #define IIC_EEPROM_SDA                    PA11
-  #define IIC_EEPROM_SCL                    PA12
+  #define IIC_EEPROM_SDA                    PA7
+  #define IIC_EEPROM_SCL                    PA8
   #define MARLIN_EEPROM_SIZE                0x800  // 2Kb (24C16)
 #elif ENABLED(SDCARD_EEPROM_EMULATION)
   #define MARLIN_EEPROM_SIZE                0x800  // 2Kb
@@ -182,7 +182,7 @@
 // Heaters / Fans
 //
 #define HEATER_0_PIN                        PA1   // HEATER1
-#define HEATER_BED_PIN                      PA7   // HOT BED
+#define HEATER_BED_PIN                      PB2   // HOT BED
 
 #ifndef FAN_PIN
   #define FAN_PIN                           PA0   // FAN
@@ -197,7 +197,7 @@
 #define SD_DETECT_PIN                    PC7
 #define SDCARD_CONNECTION                ONBOARD
 #define ONBOARD_SPI_DEVICE               1
-#define ONBOARD_SD_CS_PIN                PC12   // SDSS
+#define ONBOARD_SD_CS_PIN                PA4   // SDSS
 #define SDIO_SUPPORT
 #define NO_SD_HOST_DRIVE                       // This board's SD is only seen by the printer
 

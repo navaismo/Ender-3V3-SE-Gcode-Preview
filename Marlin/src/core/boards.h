@@ -346,6 +346,7 @@
 #define BOARD_MINGDA_MPX_ARM_MINI     4048  // STM32F103ZET6 Mingda MD-16
 #define BOARD_GTM32_PRO_VD            4049  // STM32F103VET6 controller
 #define BOARD_CREALITY_V3_GD303       4050  // Creality GD303 (STM32F103RE)
+#define BOARD_CREALITY_F401RE         4051  // Creality GD303 (STM32F401RE)
 
 //
 // ARM Cortex-M4F

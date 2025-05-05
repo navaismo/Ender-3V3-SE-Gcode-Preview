@@ -31,7 +31,8 @@
 
 #include "../../../inc/MarlinConfigPre.h"
 
-#include "../../../src/libs/duration_t.h"
+//#include "../../libs/duration_t.h"
+#include "../../../libs/duration_t.h"
 
 #if ANY(HAS_HOTEND, HAS_HEATED_BED, HAS_FAN) && PREHEAT_COUNT
   #define HAS_PREHEAT 1

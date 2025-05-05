@@ -38,7 +38,7 @@
 #include "../module/stepper.h"
 #include "../module/printcounter.h"
 #include "../module/temperature.h"
-#include "../../core/serial.h"
+#include "../core/serial.h"
 
 #if ENABLED(FWRETRACT)
   #include "fwretract.h"

@@ -28,7 +28,7 @@
 
 #include "stdio.h"
 #include "string.h"
-#include "../../gcode/gcode.h"
+#include "../gcode/gcode.h"
 
 
 #if ENABLED(USE_AUTOZ_TOOL_2)
@@ -103,7 +103,7 @@
 //获取系统时间戳
 #define GET_TICK_MS()                   millis()
 //延时us（微秒）
-#define TIME_DELAY_US(dUs)              delay_us(dUs)
+#define TIME_DELAY_US(dUs)              delayMicroseconds(dUs)
 //Marlin的idle()主循环
 #define MARLIN_CORE_IDLE()              idle()
 //更新看门狗

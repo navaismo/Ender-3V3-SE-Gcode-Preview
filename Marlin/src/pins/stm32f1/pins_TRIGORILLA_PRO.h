@@ -38,7 +38,7 @@
 
 #define BOARD_NO_NATIVE_USB
 
-#define DISABLE_JTAG
+//#define DISABLE_JTAG
 
 //#define SWAPPED_Z_PLUGS
 

@@ -21,7 +21,7 @@
  */
 
 #include "../inc/MarlinConfig.h"
-#include "../../core/serial.h"
+#include "../core/serial.h"
 
 #if ENABLED(HOST_ACTION_COMMANDS)
 

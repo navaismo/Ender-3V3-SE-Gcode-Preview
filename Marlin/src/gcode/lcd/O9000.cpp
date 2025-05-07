@@ -3,6 +3,7 @@
 #include "../parser.h"
 #include "../../lcd/dwin/e3v2/dwin.h"
 #include "../../lcd/marlinui.h"
+#include "../../module/probe.h"
 
 /**
  * M5000: Set Printing Details JOB from OctoPrint in LCD
@@ -25,6 +26,7 @@ char curr_layer[50] = {0};
 char thumbnail[50] = {0};
 char progress[10] = {0};
 char param_value[50] = {0};
+Probe myprobe;
 
 const char *getParsedValue(char *str)
 {
@@ -135,6 +137,40 @@ void GcodeSuite::O9000()
     {
       Show_Default_IMG = false;
       
+    }
+    else if (strstr(my_string, "PROBEON|") != NULL)
+    {
+      //gcode.process_subcommands_now_P(PSTR("G28")); //home
+      gcode.process_subcommands_now_P(PSTR("G0 Z40 F7000"));
+      delay(200);
+      delay(200);
+      bool res = myprobe.deploy();
+      if (!res)
+      {
+        SERIAL_ECHOLN("Probe deployed");
+      }
+      else
+      {
+        SERIAL_ECHOLN("Probe failed to deploy");
+      }
+      
+       
+    }
+    else if (strstr(my_string, "PROBEOFF|") != NULL)
+    {
+      //gcode.process_subcommands_now_P(PSTR("G28")); //home
+      gcode.process_subcommands_now_P(PSTR("G0 Z40 F7000"));
+      delay(200);
+      delay(200);
+      bool res = myprobe.stow();
+      if (!res)
+      {
+        SERIAL_ECHOLN("Probe stowed");
+      }
+      else
+      {
+        SERIAL_ECHOLN("Probe failed to stow");
+      }
     }
     else
     {

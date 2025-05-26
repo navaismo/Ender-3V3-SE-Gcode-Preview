@@ -201,7 +201,7 @@ typedef struct
   char longfilename[LONG_FILENAME_LENGTH];
 } PrintFile_InfoTypeDef;
 
-select_t select_page{0}, select_file{0}, select_print{0}, select_prepare{0}, select_control{0}, select_axis{0}, select_temp{0}, select_motion{0}, select_tune{0}, select_advset{0}, select_PLA{0}, select_ABS{0},select_TPU{0},select_PETG{0}, select_speed{0}, select_acc{0}, select_jerk{0}, select_step{0}, select_input_shaping{0}, select_linear_adv{0}, select_cextr{0},select_display{0}, select_item{0}, select_language{0}, select_hm_set_pid{0}, select_set_pid{0}, select_level{0}, select_show_pic{0};
+select_t select_page{0}, select_file{0}, select_print{0}, select_prepare{0}, select_control{0}, select_axis{0}, select_temp{0}, select_motion{0}, select_tune{0}, select_advset{0}, select_PLA{0}, select_ABS{0},select_TPU{0},select_PETG{0}, select_speed{0}, select_acc{0}, select_jerk{0}, select_step{0}, select_input_shaping{0}, select_linear_adv{0}, select_cextr{0},select_display{0},select_beeper{0}, select_item{0}, select_language{0}, select_hm_set_pid{0}, select_set_pid{0}, select_level{0}, select_show_pic{0};
 
 uint8_t index_file = MROWS,
         index_prepare = MROWS,
@@ -6627,6 +6627,9 @@ void Draw_Move_Menu()
     // DWIN_Frame_AreaCopy(1, 212, 118, 253, 131, LBLX, MBASE(4));
     DWIN_ICON_Show(HMI_flag.language, LANGUAGE_MoveE, 50, MBASE(4) + JPN_OFFSET);
 #endif
+    DWIN_Draw_Label(MBASE(5), F(" Probe Deploy"));
+    DWIN_Draw_Label(MBASE(6), F(" Probe Stow"));
+
 #endif
   }
   else
@@ -6654,6 +6657,10 @@ void Draw_Move_Menu()
   // Draw separators and icons
   LOOP_L_N(i, 3 + ENABLED(HAS_HOTEND))
   Draw_Menu_Line(i + 1, ICON_MoveX + i);
+
+  Draw_Menu_Line(5, ICON_Edit_Level_Data);
+  Draw_Menu_Line(6, ICON_Edit_Level_Data);
+
 }
 
 void Draw_AdvSet_Menu()
@@ -6757,8 +6764,9 @@ void Draw_Display_Menu(){
   // Title
   Draw_Title(F("Display Settings"));
 
-  DWIN_Draw_Label(MBASE(1), F("Mute/Unmute Beeper"));
+  DWIN_Draw_Label(MBASE(1), F("Buzzer Settings"));
   Draw_Menu_Line(1, ICON_Contact);
+  Draw_More_Icon(1);
 
   // There's no graphical asset for this label, so we just write it as string
   DWIN_Draw_Label(MBASE(2), F("Max Brightness(%)"));
@@ -6778,6 +6786,29 @@ void Draw_Display_Menu(){
   DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Store, 60, MBASE(5) + JPN_OFFSET);
   Draw_Menu_Line(5, ICON_WriteEEPROM); 
 }
+
+void Draw_Beeper_Menu(){
+  Clear_Main_Window();
+  Draw_Mid_Status_Area(true);
+  HMI_flag.Refresh_bottom_flag = false; // Flag refresh bottom parameter
+
+  // Back option
+  Draw_Back_First();
+  // Title
+  Draw_Title(F("Buzzer Settings"));
+
+  DWIN_Draw_Label(MBASE(1), F("Mute/Unmute Buzzer"));
+  Draw_Menu_Line(1, ICON_Contact);
+
+  // There's no graphical asset for this label, so we just write it as string
+  DWIN_Draw_Label(MBASE(2), F("Mute/Unmute Heat Alert"));
+  Draw_Menu_Line(2, ICON_Contact);
+
+  DWIN_ICON_Show(HMI_flag.language, LANGUAGE_Store, 60, MBASE(3) + JPN_OFFSET);
+  Draw_Menu_Line(3, ICON_WriteEEPROM); 
+  
+}
+
 
 void HMI_Display_Menu(){
   ENCODER_DiffState encoder_diffState = get_encoder_state();
@@ -6805,7 +6836,9 @@ void HMI_Display_Menu(){
       Draw_Prepare_Menu();
       break;
     case 1: // Toggle LCD Beeper
-      toggle_LCDBeep = !toggle_LCDBeep;
+      checkkey = Beeper;
+      Draw_Beeper_Menu();
+      // toggle_LCDBeep = !toggle_LCDBeep;
       break;
     case 2: // Max Brightness
       checkkey = Max_LCD_Bright;
@@ -6834,6 +6867,52 @@ void HMI_Display_Menu(){
   }
   DWIN_UpdateLCD();
 }
+
+
+void HMI_Beeper_Menu(){
+  ENCODER_DiffState encoder_diffState = get_encoder_state();
+  if (encoder_diffState == ENCODER_DIFF_NO)
+    return;
+
+  // Avoid flicker by updating only the previous menu
+  if (encoder_diffState == ENCODER_DIFF_CW)
+  {
+    if (select_beeper.inc(1  + 3))
+      Move_Highlight(1, select_beeper.now);
+  }
+  else if (encoder_diffState == ENCODER_DIFF_CCW)
+  {
+    if (select_beeper.dec())
+      Move_Highlight(-1, select_beeper.now);
+  }
+  else if (encoder_diffState == ENCODER_DIFF_ENTER)
+  {
+    switch (select_beeper.now)
+    {
+    case 0: // Back
+      select_display.now = 0;
+      checkkey = Display_Menu;
+      Draw_Display_Menu();
+      break;
+    case 1: // Toggle LCD Beeper
+      toggle_LCDBeep = !toggle_LCDBeep;
+      break;
+    case 2: // Toggle Preheat Aert
+      toggle_PreHAlert = !toggle_PreHAlert;  
+    break; 
+    case 3:
+      settings.save();  
+      break;  
+  
+
+    }
+  }
+  DWIN_UpdateLCD();
+}
+
+
+
+
 
 void HMI_LCDBright(){
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
@@ -7876,7 +7955,7 @@ void HMI_AxisMove()
   // Avoid flicker by updating only the previous menu
   if (encoder_diffState == ENCODER_DIFF_CW)
   {
-    if (select_axis.inc(1 + 3 + ENABLED(HAS_HOTEND)))
+    if (select_axis.inc(1 + 3 + ENABLED(HAS_HOTEND) + 2))
       Move_Highlight(1, select_axis.now);
   }
   else if (encoder_diffState == ENCODER_DIFF_CCW)
@@ -7932,6 +8011,31 @@ void HMI_AxisMove()
       EncoderRate.enabled = true;
       break;
 #endif
+
+    case 5: {// Probe deploy
+      gcode.process_subcommands_now_P(PSTR("G0 Z40 F7000"));
+      gcode.process_subcommands_now_P(PSTR("G4 P1000"));
+      bool r = probe.deploy();
+      if (!r){
+        gcode.process_subcommands_now_P(PSTR("M117 Probe Deployed"));
+      }else{
+        gcode.process_subcommands_now_P(PSTR("M117 Probe Deploy Failed"));
+      }
+    break;
+    }
+
+    case 6:{ //Probe Stow
+      gcode.process_subcommands_now_P(PSTR("G0 Z40 F7000"));
+      gcode.process_subcommands_now_P(PSTR("G4 P1000"));
+      bool r2 = probe.stow();
+      if (!r2){
+        gcode.process_subcommands_now_P(PSTR("M117 Probe Stowed"));
+      }else{
+        gcode.process_subcommands_now_P(PSTR("M117 Probe Stow Failed"));
+      }
+    break;
+  }  
+
     }
   }
   DWIN_UpdateLCD();
@@ -10278,7 +10382,7 @@ void EachMomentUpdate()
     }
 
     //Monitor the Preheat Material Alert
-    if(preheat_flag){
+    if(preheat_flag && toggle_PreHAlert == 1){
       Preheat_alert(material_index);
     }
 
@@ -11172,6 +11276,9 @@ void DWIN_HandleScreen()
   case Display_Menu:
     HMI_Display_Menu();
     break;
+  case Beeper:
+    HMI_Beeper_Menu();
+    break;  
   case Max_LCD_Bright:
     HMI_LCDBright();
     break;

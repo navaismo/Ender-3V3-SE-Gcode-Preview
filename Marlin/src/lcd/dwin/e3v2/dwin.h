@@ -31,7 +31,6 @@
 
 #include "../../../inc/MarlinConfigPre.h"
 
-//#include "../../libs/duration_t.h"
 #include "../../../libs/duration_t.h"
 
 #if ANY(HAS_HOTEND, HAS_HEATED_BED, HAS_FAN) && PREHEAT_COUNT
@@ -119,6 +118,7 @@ enum processID : uint8_t {
   Dimm_Bright,
   DimmTime,
   ZHeight,
+  Beeper,
   HomeOff,
   HomeOffX,
   HomeOffY,

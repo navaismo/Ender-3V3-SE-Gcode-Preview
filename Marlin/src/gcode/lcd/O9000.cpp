@@ -17,16 +17,16 @@
  *    - B64 thumbnail
  *    - Progress
  */
-bool O9000_collecting = false;
-char filename[50] = {0};
-char print_time[50] = {0};
-char ptime_left[50] = {0};
-char total_layers[50] = {0};
-char curr_layer[50] = {0};
-char thumbnail[50] = {0};
+// bool O9000_collecting = false;
+char filename[35] = {0};
+char print_time[35] = {0};
+char ptime_left[35] = {0};
+char total_layers[35] = {0};
+char curr_layer[35] = {0};
+//char thumbnail[50] = {0};
 char progress[10] = {0};
-char param_value[50] = {0};
-Probe myprobe;
+char param_value[40] = {0};
+
 
 const char *getParsedValue(char *str)
 {
@@ -60,7 +60,7 @@ void GcodeSuite::O9000()
     if (strcmp(my_string, "SC|") == 0)
     {
       // Received all params lets render
-      TERN_(DWIN_CREALITY_LCD, DWIN_OctoPrintJob(filename, print_time, ptime_left, total_layers, curr_layer, thumbnail, progress));
+      TERN_(DWIN_CREALITY_LCD, DWIN_OctoPrintJob(filename, print_time, ptime_left, total_layers, curr_layer, progress));
       SERIAL_ECHOLN("O9000 sc-rendered");
     }
     else if (strstr(my_string, "SFN|") != NULL)
@@ -113,11 +113,11 @@ void GcodeSuite::O9000()
       //SERIAL_ECHOLN("Print Finished");
       TERN_(DWIN_CREALITY_LCD, DWIN_OctoJobFinish());
     }
-    else if (strstr(my_string, "BU1|") != NULL)
-    {
+    // else if (strstr(my_string, "BU1|") != NULL)
+    // {
       
-      TERN_(DWIN_CREALITY_LCD, DWIN_OctoShowGCodeImage());
-    }
+    //   TERN_(DWIN_CREALITY_LCD, DWIN_OctoShowGCodeImage());
+    // }
      else if (strstr(my_string, "OCON|") != NULL)
     {
       serial_connection_active = true;
@@ -138,41 +138,41 @@ void GcodeSuite::O9000()
       Show_Default_IMG = false;
       
     }
-    else if (strstr(my_string, "PROBEON|") != NULL)
-    {
-      //gcode.process_subcommands_now_P(PSTR("G28")); //home
-      gcode.process_subcommands_now_P(PSTR("G0 Z40 F7000"));
-      delay(200);
-      delay(200);
-      bool res = myprobe.deploy();
-      if (!res)
-      {
-        SERIAL_ECHOLN("Probe deployed");
-      }
-      else
-      {
-        SERIAL_ECHOLN("Probe failed to deploy");
-      }
+    // else if (strstr(my_string, "PROBEON|") != NULL)
+    // {
+    //   //gcode.process_subcommands_now_P(PSTR("G28")); //home
+    //   gcode.process_subcommands_now_P(PSTR("G0 Z40 F7000"));
+    //   delay(200);
+    //   delay(200);
+    //   bool res = myprobe.deploy();
+    //   if (!res)
+    //   {
+    //     SERIAL_ECHOLN("Probe deployed");
+    //   }
+    //   else
+    //   {
+    //     SERIAL_ECHOLN("Probe failed to deploy");
+    //   }
       
        
-    }
-    else if (strstr(my_string, "PROBEOFF|") != NULL)
-    {
-      //gcode.process_subcommands_now_P(PSTR("G28")); //home
-      gcode.process_subcommands_now_P(PSTR("G0 Z40 F7000"));
-      delay(200);
-      delay(200);
-      bool res = myprobe.stow();
-      if (!res)
-      {
-        SERIAL_ECHOLN("Probe stowed");
-      }
-      else
-      {
-        SERIAL_ECHOLN("Probe failed to stow");
-      }
-    }
-    else
+    // }
+    // else if (strstr(my_string, "PROBEOFF|") != NULL)
+    // {
+    //   //gcode.process_subcommands_now_P(PSTR("G28")); //home
+    //   gcode.process_subcommands_now_P(PSTR("G0 Z40 F7000"));
+    //   delay(200);
+    //   delay(200);
+    //   bool res = myprobe.stow();
+    //   if (!res)
+    //   {
+    //     SERIAL_ECHOLN("Probe stowed");
+    //   }
+    //   else
+    //   {
+    //     SERIAL_ECHOLN("Probe failed to stow");
+    //   }
+    // }
+    // else
     {
       SERIAL_ECHOLN("Invalid Command Argument...");
     }

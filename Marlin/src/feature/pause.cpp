@@ -179,7 +179,7 @@ bool load_filament(const_float_t slow_load_length/*=0*/, const_float_t fast_load
   DEBUG_SECTION(lf, "load_filament", true);
   DEBUG_ECHOLNPAIR("... slowlen:", slow_load_length, " fastlen:", fast_load_length, " purgelen:", purge_length, " maxbeep:", max_beep_count, " showlcd:", show_lcd, " pauseforuser:", pause_for_user, " pausemode:", mode DXC_SAY);
 
-  SERIAL_ECHOLNPAIR("=====Load Filament Flag: ", serial_connection_active);
+  // SERIAL_ECHOLNPAIR("=====Load Filament Flag: ", serial_connection_active);
   if (!ensure_safe_temperature(false, mode)) {
     if (show_lcd) ui.pause_show_message(PAUSE_MESSAGE_STATUS, mode);
     return false;
@@ -405,7 +405,7 @@ bool pause_print(const_float_t retract, const xyz_pos_t &park_point, const bool 
   DEBUG_ECHOLNPAIR("... park.x:", park_point.x, " y:", park_point.y, " z:", park_point.z, " unloadlen:", unload_length, " showlcd:", show_lcd DXC_SAY);
 
   UNUSED(show_lcd);
-  SERIAL_ECHOLNPAIR("=====++++>> Pause Print Flag Value: ", serial_connection_active);
+  // SERIAL_ECHOLNPAIR("=====++++>> Pause Print Flag Value: ", serial_connection_active);
 
   if (did_pause_print) return false; // already paused
 
@@ -501,7 +501,7 @@ bool pause_print(const_float_t retract, const xyz_pos_t &park_point, const bool 
  */
 
 void show_continue_prompt(const bool is_reload) {
-  SERIAL_ECHOLNPAIR("=====++++>> Continue Flag Value: ", serial_connection_active);
+  // SERIAL_ECHOLNPAIR("=====++++>> Continue Flag Value: ", serial_connection_active);
   DEBUG_SECTION(scp, "pause_print", true);
   DEBUG_ECHOLNPAIR("... is_reload:", is_reload);
 
@@ -511,7 +511,7 @@ void show_continue_prompt(const bool is_reload) {
 }
 
 void wait_for_confirmation(const bool is_reload/*=false*/, const int8_t max_beep_count/*=0*/ DXC_ARGS) {
-  SERIAL_ECHOLNPAIR("=====++++>> WaitConfirm Flag Value: ", serial_connection_active);
+  // SERIAL_ECHOLNPAIR("=====++++>> WaitConfirm Flag Value: ", serial_connection_active);
   DEBUG_SECTION(wfc, "wait_for_confirmation", true);
   DEBUG_ECHOLNPAIR("... is_reload:", is_reload, " maxbeep:", max_beep_count DXC_SAY);
 
@@ -638,11 +638,11 @@ void wait_for_confirmation(const bool is_reload/*=false*/, const int8_t max_beep
 void resume_print(const_float_t slow_load_length/*=0*/, const_float_t fast_load_length/*=0*/, const_float_t purge_length/*=ADVANCED_PAUSE_PURGE_LENGTH*/, const int8_t max_beep_count/*=0*/, const celsius_t targetTemp/*=0*/ DXC_ARGS) {
   DEBUG_SECTION(rp, "resume_print", true);
   DEBUG_ECHOLNPAIR("... slowlen:", slow_load_length, " fastlen:", fast_load_length, " purgelen:", purge_length, " maxbeep:", max_beep_count, " targetTemp:", targetTemp DXC_SAY);
-   SERIAL_ECHOLNPAIR("=====++++>> Resume Value Flag: ", serial_connection_active);
-   SERIAL_ECHOLNPAIR("==+++ CURRPOS:", current_position.x, " ", current_position.y, " ", current_position.z, " ", current_position.e);
-   SERIAL_ECHOLNPAIR("==+++ RESUMEPOS:", resume_position.x, " ", resume_position.y, " ", resume_position.z, " ", resume_position.e);
-  SERIAL_ECHOLNPAIR("==+++ Destination:", destination.x, " ", destination.y, " ", destination.z, " ", destination.e);
-   SERIAL_ECHOLNPAIR("==+++ didpause:", did_pause_print);
+  //  SERIAL_ECHOLNPAIR("=====++++>> Resume Value Flag: ", serial_connection_active);
+  //  SERIAL_ECHOLNPAIR("==+++ CURRPOS:", current_position.x, " ", current_position.y, " ", current_position.z, " ", current_position.e);
+  //  SERIAL_ECHOLNPAIR("==+++ RESUMEPOS:", resume_position.x, " ", resume_position.y, " ", resume_position.z, " ", resume_position.e);
+  //  SERIAL_ECHOLNPAIR("==+++ Destination:", destination.x, " ", destination.y, " ", destination.z, " ", destination.e);
+  //  SERIAL_ECHOLNPAIR("==+++ didpause:", did_pause_print);
   /*
   SERIAL_ECHOLNPAIR(
     "start of resume_print()\ndual_x_carriage_mode:", dual_x_carriage_mode,
@@ -681,11 +681,11 @@ void resume_print(const_float_t slow_load_length/*=0*/, const_float_t fast_load_
   unscaled_e_move(-(PAUSE_PARK_RETRACT_LENGTH), feedRate_t(PAUSE_PARK_RETRACT_FEEDRATE));
 
   if (!axes_should_home()) {
-    SERIAL_ECHOLNPAIR("=====++++>> Axes should home why?: ", axes_should_home());
+    // SERIAL_ECHOLNPAIR("=====++++>> Axes should home why?: ", axes_should_home());
     // Move XY back to saved position
-    SERIAL_ECHOLNPAIR("=====++++>> Destination XY:", destination.x, " ", destination.y);
+    // SERIAL_ECHOLNPAIR("=====++++>> Destination XY:", destination.x, " ", destination.y);
     destination.set(resume_position.x, resume_position.y, current_position.z, current_position.e);
-    SERIAL_ECHOLNPAIR("=====++++>> NEW Destination XY:", destination.x, " ", destination.y);
+    // SERIAL_ECHOLNPAIR("=====++++>> NEW Destination XY:", destination.x, " ", destination.y);
     prepare_internal_move_to_destination(NOZZLE_PARK_XY_FEEDRATE);
 
     // Move Z back to saved position

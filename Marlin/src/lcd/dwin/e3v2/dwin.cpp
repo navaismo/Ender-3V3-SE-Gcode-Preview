@@ -257,13 +257,12 @@ uint16_t resume_bed_temp = 0;
 #if ENABLED(DWIN_CREALITY_LCD)
 #if ENABLED(HOST_ACTION_COMMANDS)
 // Beware of OctoprintJobs
-char vvfilename[50];
-char vvprint_time[50];
-char vvptime_left[50];
-char vvtotal_layer[50];
-char vvcurr_layer[50];
-char vvthumb[50];
-char vvprogress[30];
+char vvfilename[35];
+char vvprint_time[35];
+char vvptime_left[35];
+char vvtotal_layer[35];
+char vvcurr_layer[35];
+char vvprogress[20];
 bool updateOctoData = false;
 char Octo_ETA_Global[20];
 char Octo_Progress_Global[20];
@@ -321,7 +320,8 @@ static void pause_resume_feedstock(uint16_t _distance, uint16_t _feedRate)
 
 void In_out_feedtock_level(uint16_t _distance, uint16_t _feedRate, bool dir)
 {
-  char cmd[20], str_1[16];
+  char cmd[20]; 
+  // str_1[16];
   float olde = current_position.e, differ_value = 0;
   if (current_position.e < _distance)
     differ_value = (_distance - current_position.e);
@@ -346,7 +346,8 @@ void In_out_feedtock_level(uint16_t _distance, uint16_t _feedRate, bool dir)
 
 void In_out_feedtock(uint16_t _distance, uint16_t _feedRate, bool dir)
 {
-  char cmd[20], str_1[16];
+  char cmd[20]; 
+  // str_1[16];
   float olde = current_position.e, differ_value = 0;
   if (current_position.e < _distance)
     differ_value = (_distance - current_position.e);
@@ -492,11 +493,11 @@ void HMI_ResetLanguage()
   BL24CXX::write(DWIN_LANGUAGE_EEPROM_ADDRESS, (uint8_t *)&HMI_flag.language, sizeof(HMI_flag.language));
   HMI_SetLanguageCache();
 }
-static void HMI_ResetDevice()
-{
-  // uint8_t current_device = DEVICE_UNKNOWN; //Add this way temporarily
-  // BL24CXX::write(LASER_FDM_ADDR, (uint8_t *)&current_device, 1);
-}
+// static void HMI_ResetDevice()
+// {
+//   // uint8_t current_device = DEVICE_UNKNOWN; //Add this way temporarily
+//   // BL24CXX::write(LASER_FDM_ADDR, (uint8_t *)&current_device, 1);
+// }
 static void Read_Boot_Step_Value()
 {
 #if BOTH(EEPROM_SETTINGS, IIC_BL24CXX_EEPROM)
@@ -1252,23 +1253,23 @@ static xy_int8_t Converted_Grid_Point(uint8_t select_num)
   grid_point.y = select_num % GRID_MAX_POINTS_Y;
   return grid_point;
 }
-static void Toggle_Checkbox(xy_int8_t mesh_Curr, xy_int8_t mesh_Last, uint8_t dir)
-{
-  if (dir == DWIN_SCROLL_DOWN)
-  {
-    // Set the background of the previous point to the corresponding color
-    // Display the data of the previous point again
-    // Change the current box background to black
-    // Display the current point data again
-  }
-  else // Dir==dwin scroll up
-  {
-    // Set the background of the previous point to the corresponding color
-    // Display the data of the previous point again
-    // Change the current box background to black
-    // Display the current point data again
-  }
-}
+// static void Toggle_Checkbox(xy_int8_t mesh_Curr, xy_int8_t mesh_Last, uint8_t dir)
+// {
+//   if (dir == DWIN_SCROLL_DOWN)
+//   {
+//     // Set the background of the previous point to the corresponding color
+//     // Display the data of the previous point again
+//     // Change the current box background to black
+//     // Display the current point data again
+//   }
+//   else // Dir==dwin scroll up
+//   {
+//     // Set the background of the previous point to the corresponding color
+//     // Display the data of the previous point again
+//     // Change the current box background to black
+//     // Display the current point data again
+//   }
+// }
 // Leveling interface switches selected state
 static void Level_Scroll_Menu(const uint8_t dir, uint8_t select_num)
 {
@@ -2273,7 +2274,7 @@ void Octo_Draw_Menu_Line(const uint8_t line, const uint8_t icon = 0, const char 
   if (more)
     Octo_Draw_More_Icon(line);
 
-    DWIN_Draw_Line(Line_Color, 16, OCTO_MBASE(line) + 26, BLUELINE_X, OCTO_MBASE(line) + 26);  
+  DWIN_Draw_Line(Line_Color, 16, OCTO_MBASE(line) + 26, BLUELINE_X, OCTO_MBASE(line) + 26);  
 }
 
 
@@ -3181,6 +3182,10 @@ void Popup_window_PauseOrStop()
     else if (select_print.now == 2)
     {
       DWIN_ICON_Show(HMI_flag.language, LANGUAGE_StopPrint, 14, 45);
+    }else if(select_print.now == 20){
+      
+      DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_White, Color_Bg_Window, 14, 45, F("Reset Settings?"));
+     
     }
     DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Confirm, 26, 194);
     DWIN_ICON_Not_Filter_Show(HMI_flag.language, LANGUAGE_Cancel, 132, 194);
@@ -6422,10 +6427,30 @@ void HMI_PauseOrStop()
           HMI_flag.cloud_printing_flag = false;
           SERIAL_ECHOLN("M79 S4");
         }
-      }
-      else
+      }else{
         Goto_PrintProcess(); // cancel stop
-    }
+      }
+      
+    }else if(select_print.now == 20){
+        if(HMI_flag.select_flag){
+          // Reset EEPROM
+          settings.reset();
+          // After resetting, the language needs to be refreshed again.
+          Clear_Main_Window();
+          DWIN_ICON_Not_Filter_Show(Background_ICON, Background_reset, 0, 25);
+          settings.save();
+          delay(100);
+          HMI_ResetLanguage();
+          HMI_ValueStruct.Auto_PID_Value[1] = 100; // Pid number reset
+          HMI_ValueStruct.Auto_PID_Value[2] = 260; // Pid number reset
+          Save_Auto_PID_Value();
+          HAL_reboot(); // Mcu resets into bootloader
+
+        } else{
+          // cancel reset
+          Goto_MainMenu();
+        } 
+     }
   }
   DWIN_UpdateLCD();
 }
@@ -6454,7 +6479,7 @@ void HMI_O900PauseOrStop()
           SERIAL_ECHOLN("M79 S2"); // 3:cloud print pause
         }
        
-        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
+        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, Octo_Progress_Global);
 
         // Queue.inject p(pstr("m25"));
         RUN_AND_WAIT_GCODE_CMD("M25", true);
@@ -6464,7 +6489,7 @@ void HMI_O900PauseOrStop()
       else
       {
        
-        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
+        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, Octo_Progress_Global);
       }
     }
     else if (select_print.now == 2)
@@ -6504,7 +6529,7 @@ void HMI_O900PauseOrStop()
       }
       else
         
-      DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
+      DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, Octo_Progress_Global);
       // cancel stop
     }
   }
@@ -7929,27 +7954,12 @@ void HMI_Control()
       break;
 #endif
     case CONTROL_CASE_RESET:
-      // Reset EEPROM
-      settings.reset();
-      HMI_AudioFeedback();
-      // After resetting, the language needs to be refreshed again.
-      // Draw_Control_Menu();
-      Clear_Main_Window();
-#if ENABLED(DWIN_CREALITY_480_LCD)
-      DWIN_ICON_Show(ICON, ICON_LOGO, 71, 52);
-#elif ENABLED(DWIN_CREALITY_320_LCD)
-      // DWIN_ICON_Show(ICON, ICON_LOGO, 72, 36);
-      DWIN_ICON_Not_Filter_Show(Background_ICON, Background_reset, 0, 25);
-#endif
-      settings.save();
-      delay(100);
-      HMI_ResetLanguage();
-      HMI_ValueStruct.Auto_PID_Value[1] = 100; // Pid number reset
-      HMI_ValueStruct.Auto_PID_Value[2] = 260; // Pid number reset
-      Save_Auto_PID_Value();
-      // Dwin show main pic();
-      HAL_reboot(); // Mcu resets into bootloader
+      checkkey = Print_window;
+      select_print.now = 20;
+      HMI_flag.select_flag = true;
+      Popup_window_PauseOrStop();
       break;
+     
 #endif
     /*
     // rock_20210727
@@ -9599,7 +9609,7 @@ void HMI_O9000()
         // queue.enqueue_now_P(PSTR("M24"));
         // gcode.process_subcommands_now_P(PSTR("M24"));
         updateOctoData = false;
-        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
+        DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, Octo_Progress_Global);
 
       }
       else
@@ -9675,7 +9685,7 @@ void HMI_O9000Tune() {
     switch (select_tune.now) {
     case 0: { // Back
       select_print.set(0);
-      DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, vvthumb, Octo_Progress_Global);
+      DWIN_OctoPrintJob(vvfilename, vvprint_time, Octo_ETA_Global, vvtotal_layer, Octo_CL_Global, Octo_Progress_Global);
     } break;
     case TUNE_CASE_SPEED: // Print speed
       HMI_flag.Refresh_bottom_flag = true;
@@ -10579,7 +10589,7 @@ void Remove_card_window_check(void)
 
 void EachMomentUpdate()
 {
-  static float card_Index = 0;
+  // static float card_Index = 0;
   static bool heat_dir = false, heat_dir_bed = false, high_dir = false;
   static uint8_t heat_index = BG_NOZZLE_MIN, bed_heat_index = BG_BED_MIN;
   static millis_t next_var_update_ms = 0, next_rts_update_ms = 0, next_heat_flash_ms = 0, next_heat_bed_flash_ms = 0, next_high_ms = 0, next_move_file_name_ms = 0;
@@ -11915,7 +11925,7 @@ void DWIN_Show_M117(char *str)
 }
 
 // Function to render the print job details from Octoprint in the LCD.
-void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char *total_layer, char *curr_layer, char *thumbnail, char *progress)
+void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char *total_layer, char *curr_layer, char *progress)
 {
   //updateOctoData = false;
   // verify that none is null or emtpy before printing the values
@@ -11925,7 +11935,7 @@ void DWIN_OctoPrintJob(char *filename, char *print_time, char *ptime_left, char 
   const char *vtotal_layer = total_layer && total_layer[0] != '\0' ? total_layer : "0";
   const char *vcurr_layer = curr_layer && curr_layer[0] != '\0' ? curr_layer : "      0";
   // first render layer is always 0 from there we update values(spaces are needed to correct format and clear values)
-  const char *vthumb = "";
+  // const char *vthumb = "";
   const char *vprogress = progress && progress[0] != '\0' ? progress : "0";
 
   // Copy to reuse vlues outside the function

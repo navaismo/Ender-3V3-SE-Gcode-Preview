@@ -712,7 +712,7 @@ private:
     static void O9000(); // receive print details from serial device 
     static void O9001(); // receive update details from serial device
     static void O9002(); // receive image map  from serial device
-    //static void O9003(); // receive image map  from serial device
+    // static void O9003(); // receive image map  from serial device
   #endif
   #endif
 
@@ -848,12 +848,12 @@ private:
     static void M261();
   #endif
 
-  #if ENABLED(DWIN_CREALITY_LCD)
-    static void M255();
-    static void M255_report();
-    static void M256();
-    static void M256_report();
-  #endif
+  // #if ENABLED(DWIN_CREALITY_LCD)
+  //   static void M255();
+  //   static void M255_report();
+  //   static void M256();
+  //   static void M256_report();
+  // #endif
 
   #if HAS_SERVOS
     static void M280();

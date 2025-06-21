@@ -36,7 +36,7 @@
  */
 
 // Change EEPROM version if the structure changes
-#define EEPROM_VERSION "V88"
+#define EEPROM_VERSION "V90"
 #define EEPROM_OFFSET 100
 
 // Check the integrity of data offsets.
@@ -494,6 +494,8 @@ typedef struct SettingsDataStruct {
   // LCD Sound
   #if ENABLED(DWIN_LCD_BEEP)
     uint8_t toggleLCDBeep;
+    uint8_t toggle_PreHAlert;
+
   #endif     
 
   // LCD Brightness settings
@@ -502,6 +504,9 @@ typedef struct SettingsDataStruct {
    int16_t lcddimm;             
    int16_t lcdbright;       
    uint8_t czheight;       
+  #endif
+  #if ENABLED(ADVANCED_HELP_MESSAGES)
+    bool advanced_help_mesasges_enabled;
   #endif
 
 //  uint16_t Auto_PID_Value_set1;
@@ -1491,6 +1496,9 @@ void MarlinSettings::postprocess() {
     {
       uint8_t beep = toggle_LCDBeep;
       EEPROM_WRITE(beep);
+
+      uint8_t prealert = toggle_PreHAlert;
+      EEPROM_WRITE(prealert);
     }
     #endif
 
@@ -1507,6 +1515,15 @@ void MarlinSettings::postprocess() {
        EEPROM_WRITE(zheight); 
      }             
      #endif
+
+    #if ENABLED(ADVANCED_HELP_MESSAGES)
+    {
+      bool advanced_help_mesasges_enabled = false;
+
+      advanced_help_mesasges_enabled = HMI_flag.advanced_help_enabled_flag;
+      EEPROM_WRITE(advanced_help_mesasges_enabled);
+    }
+    #endif
 
     // Auto_PID_Value_set[1]=HMI_ValueStruct.Auto_PID_Value[1];
     // Auto_PID_Value_set[2]=HMI_ValueStruct.Auto_PID_Value[2];
@@ -2458,8 +2475,14 @@ void MarlinSettings::postprocess() {
       #if ENABLED(DWIN_LCD_BEEP)
       {
         uint8_t beep;
+
         EEPROM_READ(beep); //Read LCD_Beeper state
         toggle_LCDBeep = (beep > 0) ? 1 : 0;
+
+        uint8_t prealert;
+        EEPROM_READ(prealert); //Read LCD_Beeper state
+        toggle_PreHAlert = (prealert > 0) ? 1 : 0;
+
       }
       #endif
 
@@ -2478,7 +2501,16 @@ void MarlinSettings::postprocess() {
       MAX_SCREEN_BRIGHTNESS = ( bright > 230) ? 230 : bright;
       EEPROM_READ(zheight);
       CZ_AFTER_HOMING = (zheight >= 10) ? zheight : 10; //Set default value
-    }             
+    }
+    #endif
+
+    #if ENABLED(ADVANCED_HELP_MESSAGES)
+    {
+      bool advanced_help_mesasges_enabled;
+      EEPROM_READ(advanced_help_mesasges_enabled);
+
+      HMI_flag.advanced_help_enabled_flag = advanced_help_mesasges_enabled;
+    }
     #endif
       //  EEPROM_READ(Auto_PID_Value_set[1]);
       //  if(!Auto_PID_Value_set[1])Auto_PID_Value_set[1]=100;
@@ -4088,6 +4120,7 @@ void MarlinSettings::reset() {
     #if ENABLED(ENABLE_AUTO_OFF_DISPLAY)  
       SERIAL_ECHOLN("DISPLAY Settings:");
       SERIAL_ECHOLNPAIR("Buzzer ON/OFF: ", toggle_LCDBeep);
+      SERIAL_ECHOLNPAIR("Preheat Alert ON/OFF: ", toggle_PreHAlert);
       SERIAL_ECHOLNPAIR("MAX BRIGHTNESS: ", MAX_SCREEN_BRIGHTNESS);
       SERIAL_ECHOLNPAIR("DIMM BRIGHTNESS: ", DIMM_SCREEN_BRIGHTNESS);
       SERIAL_ECHOLNPAIR("AUTO OFF TIME: ", TURN_OFF_TIME);

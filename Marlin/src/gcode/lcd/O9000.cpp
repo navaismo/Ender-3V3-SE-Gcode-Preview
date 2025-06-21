@@ -3,6 +3,7 @@
 #include "../parser.h"
 #include "../../lcd/dwin/e3v2/dwin.h"
 #include "../../lcd/marlinui.h"
+#include "../../module/probe.h"
 
 /**
  * M5000: Set Printing Details JOB from OctoPrint in LCD

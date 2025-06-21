@@ -3213,6 +3213,10 @@ void Popup_window_PauseOrStop()
     else if (select_print.now == 2)
     {
       DWIN_ICON_Show(HMI_flag.language, LANGUAGE_StopPrint, 14, 45);
+    }else if(select_print.now == 20){
+      
+      DWIN_Draw_String(false, false, DWIN_FONT_HEAD, Color_White, Color_Bg_Window, 14, 45, F("Reset Settings?"));
+     
     }
     else if(select_print.now == 20){
       
@@ -3845,7 +3849,7 @@ void HMI_Zoffset()
 
 void HMI_O9000Zoffset()
 {
-  updateOctoData = false;
+  HMI_flag.Refresh_bottom_flag = true;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -4074,7 +4078,7 @@ void HMI_O9000ETemp()
 
 void HMI_O9000EFlow()
 {
-  updateOctoData = false;
+  
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -4229,6 +4233,7 @@ void HMI_BedTemp()
 void HMI_O9000BedTemp()
 {
   updateOctoData = false;
+  HMI_flag.Refresh_bottom_flag = true;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {
@@ -4414,6 +4419,7 @@ void HMI_FanSpeed()
 void HMI_O9000FanSpeed()
 {
   updateOctoData = false;
+  HMI_flag.Refresh_bottom_flag = true;
   ENCODER_DiffState encoder_diffState = Encoder_ReceiveAnalyze();
   if (encoder_diffState != ENCODER_DIFF_NO)
   {

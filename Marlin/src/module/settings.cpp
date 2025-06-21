@@ -495,7 +495,6 @@ typedef struct SettingsDataStruct {
   #if ENABLED(DWIN_LCD_BEEP)
     uint8_t toggleLCDBeep;
     uint8_t toggle_PreHAlert;
-
   #endif     
 
   // LCD Brightness settings
@@ -2482,7 +2481,6 @@ void MarlinSettings::postprocess() {
         uint8_t prealert;
         EEPROM_READ(prealert); //Read LCD_Beeper state
         toggle_PreHAlert = (prealert > 0) ? 1 : 0;
-
       }
       #endif
 

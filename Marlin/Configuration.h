@@ -176,7 +176,6 @@
 
 #define ADVANCED_HELP_MESSAGES  1 // Enabled advanced help messages
 
-
 // Printer's unique ID, used by some programs to differentiate between machines.
 // Choose your own or use a service like https://www.uuidgenerator.net/version4
 //#define MACHINE_UUID "00000000-0000-0000-0000-000000000000"

@@ -3,9 +3,12 @@
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/HDJQjH8_d.webp?maxwidth=1520&fidelity=grand" align="center" height="776" width="640"  ></a>
+<!-- <a href=""><img src="https://i.imgur.com/HDJQjH8_d.webp?maxwidth=1520&fidelity=grand" align="center" height="776" width="640"  ></a> -->
+
+![MainPrint](./media/PrintProcess.gif)
 
 </div>
+
 
 <br>
 
@@ -64,7 +67,9 @@ Also I wanted to go a little bit further, since I'm using [Octoprint](https://oc
 
 <br><br>
 
+
 # Installation:
+
 
 ## FeedRate Selection:
 The Release of the firmware starting from version 1.0.9.8_1c is compiled with two FeedRates(speed of movements):
@@ -159,6 +164,7 @@ You can find the latest code [SMT32F401 branch](https://github.com/navaismo/Ende
 
 <br><br>
 
+
 # Common Features for the Stand Alone Printer & for Octoprint.
 ## * The  7x7-Mesh:
 Based on the fork of [@aschmitt1909](https://github.com/aschmitt1909/Ender-3V3-SE), and merged with the [PR#18](https://github.com/navaismo/Ender-3V3-SE/pull/18) from [@eduard-sukharev](https://github.com/eduard-sukharev) 
@@ -166,7 +172,8 @@ Based on the fork of [@aschmitt1909](https://github.com/aschmitt1909/Ender-3V3-S
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/RZ7Foci.jpeg" align="center" height="576" width="340" ></a>
+<!-- <a href=""><img src="https://i.imgur.com/RZ7Foci.jpeg" align="center" height="576" width="340" ></a> -->
+![Grid](./media/levelGrid.gif)
 
 </div>
 
@@ -204,11 +211,11 @@ Merged the [PR#22](https://github.com/navaismo/Ender-3V3-SE/pull/22) from [@edua
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/Ocak0dE.jpeg" align="center" height="576" width="340" ></a>
+<!-- <a href=""><img src="https://i.imgur.com/Ocak0dE.jpeg" align="center" height="576" width="340" ></a>
 
 <br>
-<a href=""><img src="https://i.imgur.com/mH1uAC5.jpeg" align="center" height="576" width="340" ></a>
-
+<a href=""><img src="https://i.imgur.com/mH1uAC5.jpeg" align="center" height="576" width="340" ></a> -->
+![InputShaping](./media/InputShaping.gif)
 
 </div>
 
@@ -229,8 +236,8 @@ Enabled the option in Tune menu to modify the extrusion flow/rate of the printer
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/sWYtlSG.jpeg" align="center" height="576" width="440" ></a>
-
+<!-- <a href=""><img src="https://i.imgur.com/sWYtlSG.jpeg" align="center" height="576" width="440" ></a> -->
+![extrusion](./media/extrusion.gif)
 </div>
 
 
@@ -253,8 +260,8 @@ To preseve the state of the feature go to Menu Control --> Save settings.
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/YUpHKl2.jpeg" align="center" height="676" width="440" ></a>
-
+<!-- <a href=""><img src="https://i.imgur.com/YUpHKl2.jpeg" align="center" height="676" width="440" ></a> -->
+![DisplaySettings](./media/displaySettings.gif)
 </div>
 
 <br>
@@ -286,8 +293,8 @@ Added a quick Linear Advance Menu under Motion Menu from feature request on [Iss
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/MjZFWX0.jpeg" align="center" height="576" width="940" ></a>
-
+<!-- <a href=""><img src="https://i.imgur.com/MjZFWX0.jpeg" align="center" height="576" width="940" ></a> -->
+![LinAdv](./media/linearAdv.gif)
 </div>
 
 <br>
@@ -310,8 +317,8 @@ Added a custom Extrusion Menu under Prepare Menu from feature request on [Issue#
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/fY8wWJA.jpeg" align="center" height="976" width="1140" ></a>
-
+<!-- <a href=""><img src="https://i.imgur.com/fY8wWJA.jpeg" align="center" height="976" width="1140" ></a> -->
+![CustomExtr](./media/CustExtrusion.gif)
 </div>
 
 
@@ -322,8 +329,8 @@ Added Submenu under Control Menu to show the Print Stats gather by Marlin. From 
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/3irzF4E.jpeg" align="center" height="576" width="940" ></a>
-
+<!-- <a href=""><img src="https://i.imgur.com/3irzF4E.jpeg" align="center" height="576" width="940" ></a> -->
+![PrintStats](./media/PrintStats.gif)
 </div>
 
 <br>
@@ -333,8 +340,8 @@ Added options for preheat new Materials: PETG and ABS under Control and Pepare M
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/Q051ckp.jpeg" align="center" height="976" width="940" ></a>
-
+<!-- <a href=""><img src="https://i.imgur.com/Q051ckp.jpeg" align="center" height="976" width="940" ></a> -->
+![PreheatMat](./media/PreHeat.gif)
 </div>
 
 <br>
@@ -345,11 +352,35 @@ Added option to edit the height of the nozzle after homing. From feature request
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/WR7rl8V.jpeg" align="center" height="620" width="440" ></a>
-
+<!-- <a href=""><img src="https://i.imgur.com/WR7rl8V.jpeg" align="center" height="620" width="440" ></a> -->
+![HomeH](./media/HomeHeight.gif)
 </div>
 
 <br>
+
+
+## * CRTouch Probe tests:
+Added option to test the probe to deploay and stow inside Move Menu. From feature request on [Issue #105](https://github.com/navaismo/Ender-3V3-SE/issues/105)
+
+<div align="center">
+
+<!-- <a href=""><img src="https://i.imgur.com/0qEBfUl.jpeg" align="center" height="620" width="440" ></a> -->
+![Probe](./media/probe.gif)
+</div>
+
+<br>
+
+## * Bed Level Visualizer:
+Added option to see the Bed level iso view along the QR code to get help, this is part of the [PR #52](https://github.com/navaismo/Ender-3V3-SE/pull/52) which enable Advanced help messages by [@eduard-sukharev](https://github.com/eduard-sukharev)
+
+<div align="center">
+
+<!-- <a href=""><img src="https://i.imgur.com/0qEBfUl.jpeg" align="center" height="620" width="440" ></a> -->
+![BedQR](./media/bedLevel.gif)
+</div>
+
+<br>
+
 
 ----------
 
@@ -480,7 +511,7 @@ _In this section is **important to add the last M117 command** it will help to c
 
 <br>
 
-* For After Print Job is Resumed
+* For Before Print Job is Resumed
 >
 >```bash
 >{% if pause_position.x is not none %}
@@ -590,37 +621,15 @@ If you installed the firmware from the [Repo that Enable the Gcode Preview Using
 <br>
 
 
-### Receiving Thumbnail.
+### Receiving & Rendering Thumbnail.
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/OG4TiIl.jpeg" align="center" height="576" width="440" ></a>
+![thumb](./media/thumb.gif)
 
 </div>
 
 <br>
-
-### Rendering Thumbnail.
-
-<div align="center">
-
-<a href=""><img src="https://i.imgur.com/XQXIhTd.jpeg" align="center" height="576" width="440"  ></a>
-
-</div>
-
-<br>
-
-### Loaded Thumbnail.
-
-<div align="center">
-
-<a href=""><img src="https://i.imgur.com/HrwsfDM.jpeg" align="center" height="576" width="440"  ></a>
-
-</div>
-
-<br>
-
-
 
 
 ### New Tune Layout.
@@ -629,20 +638,12 @@ If you installed the firmware from the [Repo that Enable the Gcode Preview Using
 
 <div align="center">
 
-<a href=""><img src="https://i.imgur.com/Q5CJWSB.jpeg" align="center" height="576" width="440" ></a>
+![Tune2](./media/tune2.gif)
 
 </div>
 
 <br>
 
-
-<div align="center">
-
-<a href=""><img src="https://i.imgur.com/J2r8VFr.jpeg" align="center" height="576" width="440" ></a>
-
-</div>
-
-<br>
 
 
 #### If you disable the Thumbnail in the plugin's configuration or using the [Firmware from this REPO](https://github.com/navaismo/Ender-3V3-SE), the default Creality Image will be rendered:
